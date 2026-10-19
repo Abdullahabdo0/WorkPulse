@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkPulse — Employee Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .user-badge-header {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .user-info h2 { font-size: 1.25rem; font-weight: 800; color: #1e3a8a; }
+    .user-info p { color: #3b82f6; font-size: .88rem; margin-top: .2rem; }
+    .btn-logout {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #f87171;
+      padding: .45rem 1rem;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: .85rem;
+    }
+    .btn-logout:hover { background: #fca5a5; }
+
+    /* History table */
+    .history-card {
+      margin-top: 2rem;
+      background: #ffffff;
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+    }
+    .history-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: .75rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .9rem;
+    }
+    .history-item:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-start">
+    <a href="employee-portal.html" class="nav-brand">⚡ Work<span>Pulse</span></a>
+  </div>
+  <div class="nav-end">
+    <span style="color:#94a3b8; font-size:.88rem; font-weight:600; margin-inline-end:.5rem;" id="navUserName"></span>
+    <button class="lang-btn" onclick="i18n.toggle()">العربية</button>
+    <button class="btn-nav-logout" onclick="AUTH.logout()">خروج / Logout</button>
+  </div>
+</nav>
+
+<main>
+  <!-- User Profile Header -->
+  <div class="user-badge-header">
+    <div class="user-info">
+      <h2 id="profileFullName">—</h2>
+      <p id="profileUsername">@—</p>
+    </div>
+    <div>
+      <span class="badge" id="currentRiskBadge" style="font-size:.9rem; padding:.5rem 1rem;">جاري التحميل...</span>
+    </div>
+  </div>
+
+  <!-- Assessment & Update Card -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:.5rem;">
+      <div>
+        <h2 style="font-size:1.3rem; font-weight:800;" id="formHeaderTitle">تقييم وتحديث الحالة (Burnout Assessment)</h2>
+        <p style="color:var(--muted); font-size:.85rem; margin-top:.2rem;">
+          يمكنك تعديل بياناتك وحالتك الحالية في أي وقت ليعاد قياس الخطر فوراً.
+        </p>
+      </div>
+      <button type="button" class="page-btn" onclick="prefillSample()" style="background:#f1f5f9; font-weight:600;">
+        ⚡ تعبئة بيانات نموذجية
+      </button>
+    </div>
+
+    <form id="employeeAssessForm" novalidate>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="avg_daily_hours" data-i18n="assess_hours_label">Average Daily Hours *</label>
+          <input type="number" id="avg_daily_hours" min="4" max="16" step="0.1" placeholder="e.g. 9.5" required />
+          <span class="hint" data-i18n="assess_hours_hint">Range: 4 – 16 hours/day</span>
+        </div>
+
+        <div class="form-group">
+          <label for="overtime_hours_week" data-i18n="assess_ot_label">Overtime Hours / Week *</label>
+          <input type="number" id="overtime_hours_week" min="0" max="30" step="0.5" placeholder="e.g. 12" required />
+          <span class="hint" data-i18n="assess_ot_hint">Range: 0 – 30 hours/week</span>
+        </div>
+
+        <div class="form-group">
+          <label for="absence_days_month" data-i18n="assess_abs_label">Absence Days (last month) *</label>
+          <input type="number" id="absence_days_month" min="0" max="15" step="1" placeholder="e.g. 2" required />
+          <span class="hint" data-i18n="assess_abs_hint">Range: 0 – 15 days</span>
+        </div>
+
+        <div class="form-group">
+          <label for="late_arrivals_month" data-i18n="assess_late_label">Late Arrivals (last month) *</label>
+          <input type="number" id="late_arrivals_month" min="0" max="20" step="1" placeholder="e.g. 3" required />
+          <span class="hint" data-i18n="assess_late_hint">Range: 0 – 20 times</span>
+        </div>
+
+        <div class="form-group">
+          <label for="tasks_assigned" data-i18n="assess_tasks_label">Tasks Assigned *</label>
+          <input type="number" id="tasks_assigned" min="1" max="60" step="1" placeholder="e.g. 28" required />
+          <span class="hint" data-i18n="assess_tasks_hint">Range: 1 – 60 tasks</span>
+        </div>
+
+        <div class="form-group">
+          <label for="vacation_days_last_year" data-i18n="assess_vac_label">Vacation Days (last year) *</label>
+          <input type="number" id="vacation_days_last_year" min="0" max="30" step="1" placeholder="e.g. 7" required />
+          <span class="hint" data-i18n="assess_vac_hint">Range: 0 – 30 days</span>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="feedback" data-i18n="assess_fb_label">Employee Feedback (English only) *</label>
+          <textarea id="feedback" rows="3"
+            data-i18n-ph="assess_fb_placeholder"
+            placeholder="How do you feel about your workload recently?" required></textarea>
+          <span class="hint" style="color:var(--yellow);" data-i18n="assess_fb_hint">
+            Write in English — the AI sentiment model supports English only.
+          </span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary" id="btnSaveAssess" style="width:100%; justify-content:center; margin-top:1rem;">
+        <span id="btnSaveText">💾 حفظ وتحديث الحالة (Save & Update Diagnosis)</span>
+        <div class="spinner" id="saveSpinner"></div>
+      </button>
+    </form>
+
+    <div class="alert alert-error" id="formError" style="margin-top:1rem;"></div>
+  </div>
+
+  <!-- Live Diagnosis Result Card -->
+  <div class="result-card" id="diagnosisResult" style="margin-top:2rem;">
+    <div class="result-header">
+      <div class="result-score-big" id="resScore">—</div>
+      <div class="result-meta">
+        <h2 id="resLevelText">—</h2>
+        <p data-i18n="assess_result_sub">Burnout Risk Score (0 – 100)</p>
+      </div>
+    </div>
+
+    <div class="result-details">
+      <div class="result-detail-item">
+        <h4 data-i18n="assess_workload_lbl">Workload Probability</h4>
+        <p id="resWorkload">—</p>
+      </div>
+      <div class="result-detail-item">
+        <h4 data-i18n="assess_sentiment_lbl">Sentiment Risk</h4>
+        <p id="resSentiment">—</p>
+      </div>
+    </div>
+
+    <div>
+      <h4 style="font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:.75rem;"
+          data-i18n="assess_reasons_title">Top Contributing Factors</h4>
+      <ul class="reasons-list" id="resReasons"></ul>
+    </div>
+  </div>
+
+  <!-- Assessment History Section -->
+  <div class="history-card" id="historyCard">
+    <h3>📜 سجل التقييمات السابقة وتطور الحالة (Assessment History)</h3>
+    <div id="historyList">
+      <p style="color:var(--muted); font-size:.9rem;">لا توجد تقييمات سابقة مسجلة.</p>
+    </div>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  // Auth Guard
+  const currentUser = AUTH.requireLogin();
+
+  document.getElementById("profileFullName").textContent = currentUser.full_name;
+  document.getElementById("profileUsername").textContent = `@${currentUser.username}`;
+  document.getElementById("navUserName").textContent = currentUser.full_name;
+
+  async function loadUserHistory() {
+    try {
+      const res = await fetch(`${API}/assessments/${currentUser.id}/history`);
+      if (!res.ok) return;
+      const history = await res.json();
+
+      if (history.length > 0) {
+        const latest = history[0];
+        displayDiagnosis(latest);
+
+        // Pre-fill form inputs with latest data so employee can easily update
+        document.getElementById("avg_daily_hours").value = latest.avg_daily_hours;
+        document.getElementById("overtime_hours_week").value = latest.overtime_hours_week;
+        document.getElementById("absence_days_month").value = latest.absence_days_month;
+        document.getElementById("late_arrivals_month").value = latest.late_arrivals_month;
+        document.getElementById("tasks_assigned").value = latest.tasks_assigned;
+        document.getElementById("vacation_days_last_year").value = latest.vacation_days_last_year;
+        document.getElementById("feedback").value = latest.feedback;
+
+        renderHistoryList(history);
+      } else {
+        document.getElementById("currentRiskBadge").textContent = "لم يتم التقييم بعد (Not Assessed)";
+        document.getElementById("currentRiskBadge").className = "badge";
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function displayDiagnosis(data) {
+    const card = document.getElementById("diagnosisResult");
+    const lvl  = data.level.toLowerCase();
+    card.className = `result-card show ${lvl}`;
+
+    // Top badge
+    const badge = document.getElementById("currentRiskBadge");
+    badge.textContent = `الحالة الحالية: ${data.level} Risk (${data.risk_score}%)`;
+    badge.className = `badge badge-${lvl}`;
+
+    // Score & Level
+    const scoreEl = document.getElementById("resScore");
+    scoreEl.textContent = data.risk_score;
+    scoreEl.className = `result-score-big ${lvl}`;
+
+    const icon = lvl === "high" ? "🔴" : lvl === "medium" ? "🟡" : "🟢";
+    document.getElementById("resLevelText").textContent = `${icon} ${data.level} Risk`;
+    document.getElementById("resWorkload").textContent = `${(data.workload_probability * 100).toFixed(1)}%`;
+    document.getElementById("resSentiment").textContent = `${(data.sentiment_risk * 100).toFixed(1)}%`;
+
+    document.getElementById("resReasons").innerHTML =
+      data.top_reasons.map(r => `<li>${r}</li>`).join("");
+  }
+
+  function renderHistoryList(history) {
+    const container = document.getElementById("historyList");
+    container.innerHTML = history.map(item => `
+      <div class="history-item">
+        <div>
+          <strong>${item.created_at}</strong> — 
+          <span>ساعات العمل: ${item.avg_daily_hours}h | أوفرتايم: ${item.overtime_hours_week}h</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:1rem;">
+          <span style="font-weight:700;">Score: ${item.risk_score}%</span>
+          ${badgeHTML(item.level)}
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function prefillSample() {
+    document.getElementById("avg_daily_hours").value = "10.5";
+    document.getElementById("overtime_hours_week").value = "15";
+    document.getElementById("absence_days_month").value = "3";
+    document.getElementById("late_arrivals_month").value = "4";
+    document.getElementById("tasks_assigned").value = "35";
+    document.getElementById("vacation_days_last_year").value = "2";
+    document.getElementById("feedback").value = "I feel very stressed and overwhelmed with the current project workload.";
+  }
+
+  // Handle Form Submit (Save / Update Assessment)
+  document.getElementById("employeeAssessForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    document.getElementById("formError").classList.remove("show");
+
+    const payload = {
+      avg_daily_hours: parseFloat(document.getElementById("avg_daily_hours").value),
+      overtime_hours_week: parseFloat(document.getElementById("overtime_hours_week").value),
+      absence_days_month: parseInt(document.getElementById("absence_days_month").value),
+      late_arrivals_month: parseInt(document.getElementById("late_arrivals_month").value),
+      tasks_assigned: parseInt(document.getElementById("tasks_assigned").value),
+      vacation_days_last_year: parseInt(document.getElementById("vacation_days_last_year").value),
+      feedback: document.getElementById("feedback").value.trim(),
+    };
+
+    if (Object.values(payload).some(v => v === null || v === undefined || (typeof v === "number" && isNaN(v)))) {
+      document.getElementById("formError").textContent = "يرجى تعبئة كافة الحقول بشكل صحيح.";
+      document.getElementById("formError").classList.add("show");
+      return;
+    }
+
+    const btn = document.getElementById("btnSaveAssess");
+    const spn = document.getElementById("saveSpinner");
+    btn.disabled = true;
+    spn.style.display = "block";
+
+    try {
+      const res = await fetch(`${API}/assessments/${currentUser.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        let message = i18n.lang() === "ar" ? "حدث خطأ أثناء حفظ التقييم" : "Error saving assessment";
+        if (typeof err.detail === "string") {
+          message = err.detail;
+        } else if (Array.isArray(err.detail)) {
+          message = err.detail.map(d => {
+            const loc = Array.isArray(d.loc) ? d.loc.filter(x => x !== "body").join(".") : "";
+            return (loc ? `${loc}: ` : "") + (d.msg || "");
+          }).join(" | ");
+        }
+        throw new Error(message);
+      }
+
+      const updated = await res.json();
+      displayDiagnosis(updated);
+      await loadUserHistory(); // refresh history list
+      alert(i18n.lang() === "ar" ? "تم تحديث حالتك وتشخيصك بنجاح!" : "Your assessment has been updated successfully!");
+      document.getElementById("diagnosisResult").scrollIntoView({ behavior: "smooth" });
+    } catch (err) {
+      document.getElementById("formError").textContent = err.message;
+      document.getElementById("formError").classList.add("show");
+    } finally {
+      btn.disabled = false;
+      spn.style.display = "none";
+    }
+  });
+
+  loadUserHistory();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkPulse — Employees</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav>
+  <div class="nav-start">
+    <a href="index.html" class="nav-brand">⚡ Work<span>Pulse</span> (Admin)</a>
+    <a href="index.html"           data-i18n="nav_dashboard">Dashboard</a>
+    <a href="employees.html"       data-i18n="nav_employees" class="active">Employees</a>
+  </div>
+  <div class="nav-end">
+    <button class="lang-btn" onclick="i18n.toggle()">العربية</button>
+    <button class="btn-nav-logout" onclick="AUTH.logout()">خروج / Logout</button>
+  </div>
+</nav>
+
+<main>
+  <!-- Header with Add Button -->
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+    <div>
+      <h1 class="page-title" style="margin-bottom:.25rem;" data-i18n="emp_title">👥 Employee Workforce Directory</h1>
+      <p style="color:var(--muted); font-size:.9rem;" data-i18n="emp_subtitle">Comprehensive burnout risk assessment, monitoring and profile management</p>
+    </div>
+    <button class="btn-primary" onclick="openAddModal()">
+      <span>➕</span>
+      <span data-i18n="emp_btn_add">+ Add New Employee</span>
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="table-toolbar">
+      <div class="table-toolbar-left">
+        <input type="text" class="search-box" id="searchInput"
+               data-i18n-ph="emp_search" placeholder="Search by Name, Username or Employee ID..." />
+        <select class="filter-select" id="levelFilter">
+          <option value=""       data-i18n="emp_filter_all">All Risk Levels</option>
+          <option value="Low"    data-i18n="emp_filter_low">🟢 Low Risk</option>
+          <option value="Medium" data-i18n="emp_filter_med">🟡 Medium Risk</option>
+          <option value="High"   data-i18n="emp_filter_high">🔴 High Risk</option>
+        </select>
+      </div>
+      <div>
+        <select class="filter-select" id="pageSizeSelect">
+          <option value="20">20 / page</option>
+          <option value="50">50 / page</option>
+          <option value="100" selected>100 / page</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="tableContainer">
+      <div class="loading-overlay" data-i18n="emp_loading">Loading workforce directory...</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <div class="alert alert-error" id="empError" data-i18n="emp_api_error">
+    Could not load employee data.
+  </div>
+</main>
+
+<!-- ── Modal: Add Employee ────────────────────────────────── -->
+<div class="modal-backdrop" id="addModal">
+  <div class="modal-dialog" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 data-i18n="emp_modal_add_title">Add New Employee & Create Account</h3>
+      <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
+    </div>
+    <form id="addEmployeeForm">
+      <div class="modal-body">
+        <p style="font-size:.85rem; color:var(--muted); margin-bottom:1.25rem;" data-i18n="emp_modal_creds_hint">
+          Enter employee account credentials. They will use this username and password to log in.
+        </p>
+        <div style="display:flex; flex-direction:column; gap:1.1rem;">
+          <div class="form-group">
+            <label data-i18n="auth_fullname">Full Name *</label>
+            <input type="text" id="addFullName" placeholder="e.g. Mahmoud Ali" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="auth_username">Username (Unique) *</label>
+            <input type="text" id="addUsername" placeholder="e.g. mahmoud_ali" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="auth_password">Password (To give employee) *</label>
+            <input type="text" id="addPassword" placeholder="e.g. pass1234" required />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-action" onclick="closeModal('addModal')" data-i18n="emp_modal_btn_cancel">Cancel</button>
+        <button type="submit" class="btn-primary" id="btnSubmitAdd" data-i18n="emp_modal_btn_create">Create Employee</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Modal: Edit Employee ───────────────────────────────── -->
+<div class="modal-backdrop" id="editModal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 data-i18n="emp_modal_edit_title">Edit Employee Profile & Workload</h3>
+      <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+    </div>
+    <form id="editEmployeeForm">
+      <input type="hidden" id="editUserId" />
+      <div class="modal-body">
+        <div class="form-section-title" data-i18n="emp_modal_sec_creds">1. Account Credentials</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label data-i18n="emp_col_id">Employee ID</label>
+            <input type="text" id="editEmployeeId" disabled style="background:#f1f5f9; cursor:not-allowed;" />
+          </div>
+          <div class="form-group">
+            <label data-i18n="auth_fullname">Full Name *</label>
+            <input type="text" id="editFullName" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="auth_username">Username (Unique) *</label>
+            <input type="text" id="editUsername" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="emp_modal_new_pwd">New Password (leave empty to keep current)</label>
+            <input type="text" id="editPassword" placeholder="Leave blank to keep unchanged" />
+          </div>
+        </div>
+
+        <div class="form-section-title" data-i18n="emp_modal_sec_work">2. Workload & Operational Metrics</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label data-i18n="assess_hours_label">Average Daily Hours *</label>
+            <input type="number" id="editHours" min="4" max="16" step="0.1" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="assess_ot_label">Overtime Hours / Week *</label>
+            <input type="number" id="editOvertime" min="0" max="40" step="0.5" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="assess_abs_label">Absence Days (last month) *</label>
+            <input type="number" id="editAbsence" min="0" max="30" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="assess_late_label">Late Arrivals (last month) *</label>
+            <input type="number" id="editLate" min="0" max="30" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="assess_tasks_label">Tasks Assigned *</label>
+            <input type="number" id="editTasks" min="1" max="100" required />
+          </div>
+          <div class="form-group">
+            <label data-i18n="assess_vac_label">Vacation Days (last year) *</label>
+            <input type="number" id="editVacation" min="0" max="365" required />
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:1rem;">
+          <label data-i18n="assess_fb_label">Employee Feedback / Sentiment (English only)</label>
+          <input type="text" id="editFeedback" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-action" onclick="closeModal('editModal')" data-i18n="emp_modal_btn_cancel">Cancel</button>
+        <button type="submit" class="btn-primary" id="btnSubmitEdit" data-i18n="emp_modal_btn_save">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  AUTH.requireAdmin();
+  let allEmployees = [];
+  let currentPage  = 1;
+  let pageSize     = 100;
+
+  function showToast(msg, type = "success") {
+    const container = document.getElementById("toastContainer");
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span>${type === "success" ? "✅" : "❌"}</span> <span>${msg}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transition = "opacity .3s ease";
+      setTimeout(() => toast.remove(), 300);
+    }, 3500);
+  }
+
+  function openAddModal() {
+    document.getElementById("addEmployeeForm").reset();
+    document.getElementById("addModal").classList.add("show");
+  }
+
+  function openEditModal(userId) {
+    const emp = allEmployees.find(e => e.user_id === userId);
+    if (!emp) return;
+
+    document.getElementById("editUserId").value = emp.user_id;
+    document.getElementById("editEmployeeId").value = emp.employee_id;
+    document.getElementById("editFullName").value = emp.name;
+    document.getElementById("editUsername").value = emp.username;
+    document.getElementById("editPassword").value = "";
+    document.getElementById("editHours").value = emp.avg_daily_hours;
+    document.getElementById("editOvertime").value = emp.overtime_hours_week;
+    document.getElementById("editAbsence").value = emp.absence_days_month;
+    document.getElementById("editLate").value = emp.late_arrivals_month || 0;
+    document.getElementById("editTasks").value = emp.tasks_assigned;
+    document.getElementById("editVacation").value = emp.vacation_days_last_year || 0;
+    document.getElementById("editFeedback").value = emp.feedback || "";
+
+    document.getElementById("editModal").classList.add("show");
+  }
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove("show");
+  }
+
+  // Close modals on backdrop click
+  window.addEventListener("click", (e) => {
+    if (e.target.classList.contains("modal-backdrop")) {
+      e.target.classList.remove("show");
+    }
+  });
+
+  async function loadEmployees() {
+    try {
+      const res = await fetch(`${API}/employees?limit=2000`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      allEmployees = await res.json();
+      renderTable();
+    } catch (err) {
+      console.error(err);
+      document.getElementById("empError").classList.add("show");
+      document.getElementById("tableContainer").innerHTML =
+        `<p style="padding:1rem;color:#ef4444;">${i18n.t("emp_api_error")}</p>`;
+    }
+  }
+
+  function getFiltered() {
+    const search = document.getElementById("searchInput").value.toLowerCase();
+    const level  = document.getElementById("levelFilter").value;
+    return allEmployees.filter(e => {
+      const matchSearch = !search || 
+        (e.employee_id && e.employee_id.toLowerCase().includes(search)) ||
+        (e.name && e.name.toLowerCase().includes(search)) ||
+        (e.username && e.username.toLowerCase().includes(search));
+      const matchLevel  = !level || e.level === level;
+      return matchSearch && matchLevel;
+    });
+  }
+
+  function renderTable() {
+    pageSize = parseInt(document.getElementById("pageSizeSelect").value);
+    const filtered = getFiltered();
+    const total    = filtered.length;
+    const pages    = Math.ceil(total / pageSize);
+    if (currentPage > pages) currentPage = 1;
+
+    const start = (currentPage - 1) * pageSize;
+    const slice = filtered.slice(start, start + pageSize);
+
+    if (slice.length === 0) {
+      document.getElementById("tableContainer").innerHTML =
+        `<p style="padding:1.5rem;color:var(--muted);text-align:center;">${i18n.t("emp_no_data")}</p>`;
+      document.getElementById("pagination").innerHTML = "";
+      return;
+    }
+
+    const rows = slice.map(e => `
+      <tr>
+        <td><strong>${escapeHTML(e.employee_id)}</strong></td>
+        <td>
+          <div style="font-weight:700;">${escapeHTML(e.name || "—")}</div>
+          <div style="font-size:.78rem; color:var(--muted);">@${escapeHTML(e.username)}</div>
+        </td>
+        <td>${e.avg_daily_hours.toFixed(1)}h</td>
+        <td>${e.overtime_hours_week.toFixed(1)}h</td>
+        <td>${e.absence_days_month}d</td>
+        <td>${e.tasks_assigned}</td>
+        <td>${scoreBarHTML(e.risk_score, e.level)}</td>
+        <td>${badgeHTML(e.level)}</td>
+        <td class="col-actions">
+          <div class="actions-wrap">
+            <button class="btn-action edit" onclick="openEditModal(${e.user_id})" title="${i18n.t("emp_btn_edit")}">
+              ✏️ ${i18n.t("emp_btn_edit")}
+            </button>
+            <button class="btn-action delete" onclick="handleDeleteEmployee(${e.user_id})" title="${i18n.t("emp_btn_delete")}">
+              🗑️ ${i18n.t("emp_btn_delete")}
+            </button>
+          </div>
+        </td>
+      </tr>`).join("");
+
+    document.getElementById("tableContainer").innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="emp_col_id">${i18n.t("emp_col_id")}</th>
+            <th data-i18n="emp_col_name">${i18n.t("emp_col_name")}</th>
+            <th data-i18n="emp_col_hours">${i18n.t("emp_col_hours")}</th>
+            <th data-i18n="emp_col_ot">${i18n.t("emp_col_ot")}</th>
+            <th data-i18n="emp_col_abs">${i18n.t("emp_col_abs")}</th>
+            <th data-i18n="emp_col_tasks">${i18n.t("emp_col_tasks")}</th>
+            <th style="min-width:140px;" data-i18n="emp_col_score">${i18n.t("emp_col_score")}</th>
+            <th data-i18n="emp_col_level">${i18n.t("emp_col_level")}</th>
+            <th class="col-actions" data-i18n="emp_col_actions">${i18n.t("emp_col_actions")}</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="margin-top:.75rem;font-size:.8rem;color:var(--muted);">
+        ${i18n.t("emp_showing")} ${start+1}–${Math.min(start+pageSize,total)} ${i18n.t("emp_of")} ${total} ${i18n.t("emp_employees")}
+      </p>`;
+
+    // Pagination
+    const pag = document.getElementById("pagination");
+    pag.innerHTML = "";
+    if (pages <= 1) return;
+    for (let p = 1; p <= Math.min(pages, 10); p++) {
+      const btn = document.createElement("button");
+      btn.className = "page-btn" + (p === currentPage ? " active" : "");
+      btn.textContent = p;
+      btn.onclick = () => { currentPage = p; renderTable(); };
+      pag.appendChild(btn);
+    }
+  }
+
+  // Handle Add Employee Form
+  document.getElementById("addEmployeeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("btnSubmitAdd");
+    btn.disabled = true;
+
+    const payload = {
+      full_name: document.getElementById("addFullName").value.trim(),
+      username: document.getElementById("addUsername").value.trim(),
+      password: document.getElementById("addPassword").value
+    };
+
+    try {
+      const res = await fetch(`${API}/employees`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Failed to add employee");
+      }
+
+      const created = await res.json();
+      allEmployees.unshift(created);
+      renderTable();
+      closeModal("addModal");
+      showToast(i18n.t("emp_success_add"), "success");
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // Handle Edit Employee Form
+  document.getElementById("editEmployeeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("btnSubmitEdit");
+    btn.disabled = true;
+
+    const userId = parseInt(document.getElementById("editUserId").value);
+    const pwd = document.getElementById("editPassword").value.trim();
+
+    const payload = {
+      full_name: document.getElementById("editFullName").value.trim(),
+      username: document.getElementById("editUsername").value.trim(),
+      avg_daily_hours: parseFloat(document.getElementById("editHours").value),
+      overtime_hours_week: parseFloat(document.getElementById("editOvertime").value),
+      absence_days_month: parseInt(document.getElementById("editAbsence").value),
+      late_arrivals_month: parseInt(document.getElementById("editLate").value),
+      tasks_assigned: parseInt(document.getElementById("editTasks").value),
+      vacation_days_last_year: parseInt(document.getElementById("editVacation").value),
+      feedback: document.getElementById("editFeedback").value.trim()
+    };
+
+    if (pwd) payload.password = pwd;
+
+    try {
+      const res = await fetch(`${API}/employees/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Failed to update employee");
+      }
+
+      const updated = await res.json();
+      const idx = allEmployees.findIndex(e => e.user_id === userId);
+      if (idx !== -1) allEmployees[idx] = updated;
+
+      renderTable();
+      closeModal("editModal");
+      showToast(i18n.t("emp_success_update"), "success");
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // Handle Delete Employee
+  async function handleDeleteEmployee(userId) {
+    const target = allEmployees.find(e => e.user_id === userId);
+    const name = target ? target.name : "Employee";
+    const confirmMsg = `${i18n.t("emp_confirm_delete")}\n\nEmployee: ${name}`;
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`${API}/employees/${userId}`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Failed to delete employee");
+      }
+
+      allEmployees = allEmployees.filter(e => e.user_id !== userId);
+      renderTable();
+      showToast(i18n.t("emp_success_delete"), "success");
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  document.getElementById("searchInput").addEventListener("input",   () => { currentPage=1; renderTable(); });
+  document.getElementById("levelFilter").addEventListener("change",  () => { currentPage=1; renderTable(); });
+  document.getElementById("pageSizeSelect").addEventListener("change",() => { currentPage=1; renderTable(); });
+
+  // Re-render table headers on language change
+  document.addEventListener("langchange", renderTable);
+
+  loadEmployees();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkPulse — Executive Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── Navigation ─────────────────────────────────────────── -->
+<nav>
+  <div class="nav-start">
+    <a href="index.html" class="nav-brand">⚡ Work<span>Pulse</span> (Admin)</a>
+    <a href="index.html"        data-i18n="nav_dashboard" class="active">Dashboard</a>
+    <a href="employees.html"    data-i18n="nav_employees">Employees</a>
+  </div>
+  <div class="nav-end">
+    <button class="lang-btn" onclick="i18n.toggle()">العربية</button>
+    <button class="btn-nav-logout" onclick="AUTH.logout()">خروج / Logout</button>
+  </div>
+</nav>
+
+<!-- ── Main Content ───────────────────────────────────────── -->
+<main>
+  <!-- Executive Banner -->
+  <div class="exec-header-banner">
+    <div>
+      <div style="display:inline-block; background:rgba(59,130,246,0.2); border:1px solid rgba(59,130,246,0.4); color:#60a5fa; font-size:.78rem; font-weight:800; padding:.2rem .75rem; border-radius:999px; margin-bottom:.5rem;">
+        ⚡ WorkPulse AI Intelligence Core
+      </div>
+      <h1 data-i18n="dash_title">Executive Analytics Dashboard</h1>
+      <p data-i18n="dash_subtitle">Live enterprise workload intelligence & predictive burnout monitoring</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;">
+      <div style="font-size:.85rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:.5rem 1rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1);" id="liveDateBadge">
+        📅 Live
+      </div>
+      <a href="employees.html" class="btn-primary" style="box-shadow:none;">
+        <span>👥</span>
+        <span data-i18n="nav_employees">Manage Workforce</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Primary Risk Level KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-title" data-i18n="dash_total">Total Employees</div>
+      <div class="kpi-val" id="statTotal">—</div>
+      <div class="kpi-sub" data-i18n="dash_total_sub">Active workforce</div>
+    </div>
+    <div class="kpi-card low">
+      <div class="kpi-title" data-i18n="dash_low">Healthy & Balanced</div>
+      <div class="kpi-val" style="color:var(--green);" id="statLow">—</div>
+      <div class="kpi-sub" id="statLowPct">—</div>
+    </div>
+    <div class="kpi-card med">
+      <div class="kpi-title" data-i18n="dash_medium">Moderate Workload</div>
+      <div class="kpi-val" style="color:var(--yellow);" id="statMedium">—</div>
+      <div class="kpi-sub" id="statMediumPct">—</div>
+    </div>
+    <div class="kpi-card high">
+      <div class="kpi-title" data-i18n="dash_high">Critical Burnout Risk 🔴</div>
+      <div class="kpi-val" style="color:var(--red);" id="statHigh">—</div>
+      <div class="kpi-sub" id="statHighPct">—</div>
+    </div>
+  </div>
+
+  <!-- Secondary Operational Metrics KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-title" data-i18n="dash_kpi_avg_hours">Daily Hours Avg</div>
+      <div class="kpi-val" id="statAvgHours">—<span style="font-size:1.1rem; color:var(--muted); font-weight:600;">h</span></div>
+      <div class="kpi-sub">Benchmark: 8.0h</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-title" data-i18n="dash_kpi_avg_ot">Weekly Overtime Avg</div>
+      <div class="kpi-val" id="statAvgOt">—<span style="font-size:1.1rem; color:var(--muted); font-weight:600;">h</span></div>
+      <div class="kpi-sub">Over standard 40h/wk</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title" data-i18n="dash_kpi_avg_tasks">Avg Active Tasks</div>
+      <div class="kpi-val" id="statAvgTasks">—</div>
+      <div class="kpi-sub">Concurrent assignments</div>
+    </div>
+    <div class="kpi-card high">
+      <div class="kpi-title" data-i18n="dash_kpi_avg_score">Workforce Risk Index</div>
+      <div class="kpi-val" id="statAvgScore">—<span style="font-size:1.1rem; color:var(--muted); font-weight:600;">/100</span></div>
+      <div class="kpi-sub">AI composite fatigue index</div>
+    </div>
+  </div>
+
+  <!-- Charts Grid -->
+  <div class="dashboard-three-col">
+    <!-- Chart 1: Donut -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h3 style="font-size:1.1rem; font-weight:800;" data-i18n="dash_chart_dist">Risk Level Distribution</h3>
+        <span style="font-size:.78rem; background:#eff6ff; color:#2563eb; padding:.2rem .6rem; border-radius:6px; font-weight:700;">Live</span>
+      </div>
+      <div style="position:relative; height:260px;">
+        <canvas id="donutChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 2: Workload Benchmark -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h3 style="font-size:1.1rem; font-weight:800;" data-i18n="dash_chart_benchmark">Workload Benchmark by Risk Group</h3>
+        <span style="font-size:.78rem; background:#f8fafc; color:#64748b; padding:.2rem .6rem; border-radius:6px; font-weight:700;">Hours / Wk</span>
+      </div>
+      <div style="position:relative; height:260px;">
+        <canvas id="benchmarkChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Immediate Critical Attention Watchlist -->
+  <div class="watchlist-card">
+    <div class="watchlist-header">
+      <div>
+        <h3 data-i18n="dash_watchlist_title">🚨 Critical Attention Watchlist</h3>
+        <p style="font-size:.85rem; color:var(--muted); margin-top:.25rem;" data-i18n="dash_watchlist_sub">Employees with highest burnout probability requiring immediate workload rebalancing</p>
+      </div>
+      <a href="employees.html" class="btn-action edit" style="padding:.45rem .9rem; text-decoration:none;">
+        <span data-i18n="emp_filter_all">View All Employees</span> &rarr;
+      </a>
+    </div>
+
+    <div id="watchlistTableContainer">
+      <div class="loading-overlay">Loading priority watchlist...</div>
+    </div>
+  </div>
+
+  <!-- AI Executive Insight Card -->
+  <div class="card" style="margin-top:2rem; background:linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border-left:5px solid #2563eb;">
+    <div style="display:flex; align-items:flex-start; gap:1rem;">
+      <div style="font-size:2rem;">💡</div>
+      <div>
+        <h4 style="font-size:1rem; font-weight:800; color:#1e3a8a; margin-bottom:.3rem;" data-i18n="dash_ai_insights">AI Executive Recommendations</h4>
+        <p id="aiInsightText" style="font-size:.9rem; color:#334155; line-height:1.6;">
+          Analyzing current workload metrics across your enterprise...
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error alert -->
+  <div class="alert alert-error" id="dashError" data-i18n="dash_api_error">
+    Could not connect to the API.
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  AUTH.requireAdmin();
+  let donutChart, benchmarkChart;
+  let cachedStats = null;
+
+  // Set live date badge
+  const dateOptions = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+  document.getElementById("liveDateBadge").textContent = `📅 ${new Date().toLocaleDateString(undefined, dateOptions)}`;
+
+  async function loadDashboard() {
+    try {
+      const res = await fetch(`${API}/stats`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      cachedStats = data;
+
+      // Populate Primary KPIs
+      document.getElementById("statTotal").textContent     = data.total;
+      document.getElementById("statLow").textContent       = data.low;
+      document.getElementById("statMedium").textContent    = data.medium;
+      document.getElementById("statHigh").textContent      = data.high;
+      document.getElementById("statLowPct").textContent    = `${data.low_pct}% of workforce`;
+      document.getElementById("statMediumPct").textContent = `${data.medium_pct}% of workforce`;
+      document.getElementById("statHighPct").textContent   = `${data.high_pct}% critical`;
+
+      // Populate Secondary Operational KPIs
+      document.getElementById("statAvgHours").innerHTML = `${data.avg_daily_hours}<span style="font-size:1.1rem; color:var(--muted); font-weight:600;">h</span>`;
+      document.getElementById("statAvgOt").innerHTML    = `${data.avg_overtime_hours}<span style="font-size:1.1rem; color:var(--muted); font-weight:600;">h</span>`;
+      document.getElementById("statAvgTasks").textContent = data.avg_tasks;
+      document.getElementById("statAvgScore").innerHTML = `${data.avg_risk_score}<span style="font-size:1.1rem; color:var(--muted); font-weight:600;">/100</span>`;
+
+      // Render Charts & Watchlist
+      buildCharts(data);
+      renderWatchlist(data.high_risk_list || []);
+      renderInsights(data);
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById("dashError").classList.add("show");
+    }
+  }
+
+  function renderWatchlist(list) {
+    const container = document.getElementById("watchlistTableContainer");
+    if (!list || list.length === 0) {
+      container.innerHTML = `<p style="padding:1.5rem; color:var(--green); text-align:center; font-weight:700;">✅ Excellent! No employees currently at critical burnout risk.</p>`;
+      return;
+    }
+
+    const rows = list.map(emp => `
+      <tr>
+        <td><strong>${escapeHTML(emp.employee_id)}</strong></td>
+        <td><strong>${escapeHTML(emp.name)}</strong></td>
+        <td>${scoreBarHTML(emp.risk_score, emp.level)}</td>
+        <td><strong>${emp.overtime_hours_week.toFixed(1)}h</strong> / wk</td>
+        <td>${emp.avg_daily_hours.toFixed(1)}h / day</td>
+        <td>${emp.tasks_assigned} tasks</td>
+        <td>
+          <a href="employees.html" class="btn-action edit" style="text-decoration:none;">
+            🔍 ${i18n.t("dash_btn_inspect")}
+          </a>
+        </td>
+      </tr>
+    `).join("");
+
+    container.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="emp_col_id">${i18n.t("emp_col_id")}</th>
+            <th data-i18n="emp_col_name">${i18n.t("emp_col_name")}</th>
+            <th style="min-width:140px;" data-i18n="dash_col_score">${i18n.t("dash_col_score")}</th>
+            <th data-i18n="dash_col_ot">${i18n.t("dash_col_ot")}</th>
+            <th data-i18n="emp_col_hours">${i18n.t("emp_col_hours")}</th>
+            <th data-i18n="emp_col_tasks">${i18n.t("emp_col_tasks")}</th>
+            <th data-i18n="dash_col_action">${i18n.t("dash_col_action")}</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  function renderInsights(data) {
+    const isAr = i18n.lang() === "ar";
+    let text = "";
+
+    if (data.high_pct > 25) {
+      text = isAr
+        ? `⚠️ تنبيه حرج: ${data.high_pct}% من قوة العمل تقع في منطقة الخطر المرتفع. يُوصى فوراً بإعادة توزيع المهام وتخفيض الساعات الإضافية (المتوسط الحالي: ${data.avg_overtime_hours} ساعة/أسبوع).`
+        : `⚠️ Critical Alert: ${data.high_pct}% of workforce is in High Burnout range. Strongly recommend redistributing tasks and capping weekly overtime (current avg: ${data.avg_overtime_hours}h/wk).`;
+    } else if (data.medium_pct > 30) {
+      text = isAr
+        ? `ℹ️ حالة معتدلة: نسبة الخطر المتوسط تبلغ ${data.medium_pct}%. يُوصى بجدولة إجازات ومراقبة ساعات الدوام لمنع تحولهم إلى مرحلة الاحتراق.`
+        : `ℹ️ Moderate Workload: ${data.medium_pct}% in medium risk group. Proactively schedule leave and monitor task quotas to prevent burnout progression.`;
+    } else {
+      text = isAr
+        ? `✅ حالة مستقرة: غالبية الموظفين (${data.low_pct}%) يتمتعون ببيئة عمل صحية ومستقرة، ومؤشرات الإجهاد ضمن النطاق الطبيعي.`
+        : `✅ Optimal Health: The majority (${data.low_pct}%) are operating under sustainable, healthy conditions with balanced workloads.`;
+    }
+
+    document.getElementById("aiInsightText").textContent = text;
+  }
+
+  function buildCharts(data) {
+    const low = i18n.t("emp_filter_low");
+    const med = i18n.t("emp_filter_med");
+    const hi  = i18n.t("emp_filter_high");
+
+    // Donut Chart
+    const donutCtx = document.getElementById("donutChart").getContext("2d");
+    if (donutChart) donutChart.destroy();
+    donutChart = new Chart(donutCtx, {
+      type: "doughnut",
+      data: {
+        labels: [low, med, hi],
+        datasets: [{
+          data: [data.low, data.medium, data.high],
+          backgroundColor: ["#10b981", "#f59e0b", "#ef4444"],
+          borderWidth: 3,
+          borderColor: "#ffffff",
+          hoverOffset: 8,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "65%",
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { font: { family: "Cairo, sans-serif", weight: "700" }, padding: 15 }
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.label}: ${ctx.raw} (${((ctx.raw / data.total) * 100).toFixed(1)}%)`
+            }
+          }
+        }
+      }
+    });
+
+    // Workload Benchmark Chart
+    const benchCtx = document.getElementById("benchmarkChart").getContext("2d");
+    if (benchmarkChart) benchmarkChart.destroy();
+
+    const lowHours = data.low_metrics?.avg_hours || 8.0;
+    const medHours = data.med_metrics?.avg_hours || 8.8;
+    const hiHours  = data.high_metrics?.avg_hours || 10.2;
+
+    const lowOt = data.low_metrics?.avg_ot || 2.0;
+    const medOt = data.med_metrics?.avg_ot || 6.5;
+    const hiOt  = data.high_metrics?.avg_ot || 13.5;
+
+    const lblDaily = i18n.lang() === "ar" ? "ساعات يومياً" : "Daily Hours (h)";
+    const lblOt    = i18n.lang() === "ar" ? "ساعات إضافية/أسبوع" : "Weekly Overtime (h)";
+
+    benchmarkChart = new Chart(benchCtx, {
+      type: "bar",
+      data: {
+        labels: [low, med, hi],
+        datasets: [
+          {
+            label: lblDaily,
+            data: [lowHours, medHours, hiHours],
+            backgroundColor: "#3b82f6",
+            borderRadius: 6
+          },
+          {
+            label: lblOt,
+            data: [lowOt, medOt, hiOt],
+            backgroundColor: "#f43f5e",
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { font: { family: "Cairo, sans-serif", weight: "600" } }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: "#f1f5f9" }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: "Cairo, sans-serif", weight: "700" } }
+          }
+        }
+      }
+    });
+  }
+
+  // Language Change Listener
+  document.addEventListener("langchange", () => {
+    if (cachedStats) {
+      buildCharts(cachedStats);
+      renderWatchlist(cachedStats.high_risk_list || []);
+      renderInsights(cachedStats);
+    }
+  });
+
+  loadDashboard();
+</script>
+
+</body>
+</html>
