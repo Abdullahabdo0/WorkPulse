@@ -15,7 +15,8 @@ from pptx.enum.text import PP_ALIGN
 from pptx.oxml import parse_xml
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-OUT_PATH = os.path.join(ROOT, "WorkPulse_Kaggle_Data_Pipeline_Arabic.pptx")
+OUT_PATH_TAWAZON = os.path.join(ROOT, "Tawazon_Kaggle_Data_Pipeline_Arabic.pptx")
+OUT_PATH_LEGACY = os.path.join(ROOT, "WorkPulse_Kaggle_Data_Pipeline_Arabic_LargeFont.pptx")
 
 # ── Color Palette ──────────────────────────────────────────────────────────
 BG_DARK    = RGBColor(0x0F, 0x17, 0x2A)   # Navy 900
@@ -279,7 +280,7 @@ def build_arabic_presentation():
             ["الصفوف المكررة", "5,948 صفاً مكرراً", "0 (صفر)", "إزالة كاملة لمنع انحياز النموذج"],
             ["حجم العينة النهائية", "-", "1,000 موظف", "سحب عينة طبقية متوازنة (Stratified)"],
             ["نسبة الاحتراق الوظيفي", "~43% (مستمر)", "44.1% (ثنائي)", "مطابقة لإحصائيات منظمة العمل الدولية"],
-            ["عدد الأعمدة ونوعها", "9 أعمدة أرقام", "10 أعمدة (أرقام + نصوص)", "إضافة طبقة نصوص الـ NLP والأسماء"],
+            ["عدد الأعمدة ونوعها", "9 أعمدة أرقام", "12 عموداً (ديموغرافيا + أرقام + نصوص)", "إضافة الجنس، العمر، نصوص الـ NLP والأسماء"],
         ],
         0.6, 1.25, 12.13, 0.48, hex_header=HEX_GREEN
     )
@@ -288,7 +289,7 @@ def build_arabic_presentation():
     add_text_ar(s, "النتيجة النهائية لمرحلة هندسة وتنظيف البيانات", 0.9, 4.75, 11.5, 0.35, font_size=16, bold=True, color=GREEN)
     add_bullets_ar(s, [
         "1. ملف data/employees.csv جاهز وموثق بنسبة 100% وخالٍ من أي أخطاء أو قيم شاذة.",
-        "2. العينة تضم 1,000 موظف بأسماء عربية فريدة تعبر عن واقع المؤسسات المحلية.",
+        "2. العينة تضم 1,000 موظف بأسماء عربية فريدة وبيانات ديموغرافية (النوع والعمر) تعبر عن بيئة العمل الحقيقية.",
         "3. استقرار تام للنتائج بفضل تثبيت معامل العشوائية (random_state = 42).",
     ], 0.9, 5.2, 11.5, 1.5, font_size=13, color=WHITE, spacing=8)
 
@@ -299,16 +300,18 @@ def build_arabic_presentation():
     set_bg(s)
     add_rect(s, 0, 0, 13.33, 0.12, CYAN)
 
-    add_text_ar(s, "4. جدول مواءمة المتغيرات (Kaggle  ◀  WorkPulse Schema)",
+    add_text_ar(s, "4. جدول مواءمة المتغيرات (Kaggle  ◀  Tawazon Schema)",
                 0.5, 0.3, 12.33, 0.5, font_size=26, bold=True, color=CYAN)
-    add_text_ar(s, "تحويل أعمدة كاجل إلى مؤشرات الموارد البشرية مع إضافة التشويش الطبيعي (Noise):",
+    add_text_ar(s, "تحويل أعمدة كاجل إلى مؤشرات الموارد البشرية والديموغرافيا مع إضافة التشويش الطبيعي (Noise):",
                 0.5, 0.85, 12.33, 0.3, font_size=13, color=MUTED)
 
     add_table_ar(s,
-        ["عمود نظام WorkPulse", "المصدر من كاجل", "معادلة الاشتقاق والتحويل", "المدى الناتج"],
+        ["عمود نظام Tawazon", "المصدر من كاجل", "معادلة الاشتقاق والتحويل", "المدى الناتج"],
         [
             ["employee_id", "كود مشفر (Hash)", "توليد كود منظم: EMP0001 - EMP1000", "EMP0001 - EMP1000"],
             ["name", "- (غير موجود)", "أسماء عربية ثلاثية مطابقة للجنس", "1,000 اسم فريد"],
+            ["gender", "Gender (موجود في كاجل)", "المحافظة على التوزيع (527 إناث / 473 ذكور)", "Male / Female"],
+            ["age", "Designation (المستوى الوظيفي)", "23 + (Designation * 5.2) + Noise", "22 - 56 سنة (متوسط 34.7)"],
             ["avg_daily_hours", "Resource Allocation (1-10)", "6.0 + (RA - 1) / 9 * 7.0 + Noise", "6.0 - 13.0 ساعة"],
             ["overtime_hours_week", "Resource + Fatigue", "(RA/10 * 15) + (Fatigue/10 * 10) + Noise", "0.0 - 25.0 ساعة"],
             ["absence_days_month", "Mental Fatigue Score", "Mental Fatigue / 10 * 8 + Noise", "0 - 8 أيام"],
@@ -318,7 +321,7 @@ def build_arabic_presentation():
             ["feedback", "- (غير موجود)", "نصوص مشاعر موزعة حسب معدل الإجهاد", "45 جملة معبرة"],
             ["burnout", "Burn Rate (0.0-1.0)", "1 إذا كان Burn Rate >= 0.50 وإلا 0", "0 أو 1"],
         ],
-        0.5, 1.25, 12.33, 0.38, hex_header=HEX_CYAN
+        0.5, 1.25, 12.33, 0.34, hex_header=HEX_CYAN
     )
 
     add_card(s, 0.5, 5.7, 12.33, 1.4, HEX_CYAN)
@@ -460,14 +463,13 @@ def build_arabic_presentation():
         add_text_ar(s, q, x + 0.2, y + 0.15, 5.5, 0.35, font_size=13, bold=True, color=RGBColor.from_string(hex_c))
         add_bullets_ar(s, answers, x + 0.2, y + 0.6, 5.5, 1.9, font_size=11.5, color=WHITE, spacing=6)
 
-    # Save with fallback if open in PowerPoint
+    # Save to both Tawazon and Legacy filenames
+    prs.save(OUT_PATH_TAWAZON)
     try:
-        prs.save(OUT_PATH)
-        print(f"[SUCCESS] Ultra-clear Arabic presentation saved: {OUT_PATH}")
-    except PermissionError:
-        alt_path = os.path.join(ROOT, "WorkPulse_Kaggle_Data_Pipeline_Arabic_LargeFont.pptx")
-        prs.save(alt_path)
-        print(f"[SUCCESS] Original file was open in PowerPoint. Saved to: {alt_path}")
+        prs.save(OUT_PATH_LEGACY)
+    except Exception as e:
+        print(f"[Note] Legacy pptx save note: {e}")
+    print(f"[SUCCESS] Ultra-clear Arabic presentation saved:\n  - {OUT_PATH_TAWAZON}\n  - {OUT_PATH_LEGACY}")
 
 
 if __name__ == "__main__":

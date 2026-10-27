@@ -18,7 +18,8 @@ from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn, nsdecls
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-OUT_PATH = os.path.join(ROOT, "WorkPulse_Dataset_Description_Document.docx")
+OUT_PATH_TAWAZON = os.path.join(ROOT, "Tawazon_Dataset_Description_Document.docx")
+OUT_PATH_LEGACY = os.path.join(ROOT, "WorkPulse_Dataset_Description_Document.docx")
 
 # ── Color Palette ────────────────────────────────────────────────────────────
 COLOR_PRIMARY    = RGBColor(0x0F, 0x17, 0x2A)   # Navy 900
@@ -333,24 +334,27 @@ def create_document():
     )
 
     # ── Section 3: Data Dictionary ───────────────────────────────────────────
-    add_heading_1(doc, "3. Data Dictionary (Schema Specification)")
+    add_heading_1(doc, "3. Data Dictionary (Schema Specification - 12 Attributes)")
     add_body_p(
         doc,
-        "The resulting data repository comprises 10 attributes: 1 unique identifier, 1 display name, 6 quantitative workplace features, "
-        "1 qualitative NLP sentiment text feature, and 1 binary supervised target label."
+        "The resulting data repository comprises 12 attributes: 1 unique identifier, 1 display name, 2 demographic attributes (gender & age), "
+        "6 quantitative workplace predictors, 1 qualitative NLP sentiment text feature (supporting Arabic and English), "
+        "and 1 binary supervised target label."
     )
 
     dict_headers = ["Feature Name", "Data Type", "Valid Domain", "Role", "Mathematical Origin & Description"]
     dict_data = [
         ["employee_id", "String", "EMP0001 - EMP1000", "Identifier", "Sequential primary key formatted for enterprise HR display."],
-        ["name", "String", "Full English Name", "Metadata", "Gender-matched transliterated Egyptian / Arab full name."],
+        ["name", "String", "Full Arabic/English Name", "Metadata", "Gender-matched transliterated Egyptian / Arab full name."],
+        ["gender", "String", "Male / Female", "Demographic", "Preserved directly from Kaggle records (527 Female / 473 Male)."],
+        ["age", "Integer", "22 – 56 yrs", "Demographic", "Derived from Designation level (seniority) + tenure (Mean: 34.7 yrs)."],
         ["avg_daily_hours", "Float", "6.00 – 13.00 hrs", "Predictor", "Derived from Resource Allocation: 6.0 + (RA - 1)/9 * 7.0 + Noise."],
         ["overtime_hours_week", "Float", "0.00 – 25.00 hrs", "Predictor", "Derived from RA and Fatigue: (RA/10 * 15) + (Fatigue/10 * 10)."],
         ["absence_days_month", "Integer", "0 – 8 days", "Predictor", "Unplanned monthly sick/personal leave derived from Fatigue."],
         ["late_arrivals_month", "Integer", "0 – 15 times", "Predictor", "Monthly punctuality deficit correlated with Burn Rate."],
         ["tasks_assigned", "Integer", "5 – 40 tasks", "Predictor", "Monthly concurrent task queue volume derived from Designation level."],
         ["vacation_days_last_year", "Integer", "0 – 25 days", "Predictor (-)", "Protective factor: 25 * (1 - Burn Rate) (Inversely related)."],
-        ["feedback", "Text", "15 - 120 chars", "NLP Input", "Employee qualitative statement parsed by DistilBERT model."],
+        ["feedback", "Text", "15 - 120 chars", "NLP Input", "Employee qualitative statement parsed by DistilBERT / Arabic NLP engine."],
         ["burnout", "Binary", "0 or 1", "Target Label", "Ground Truth: 1 if Burn Rate >= 0.50, else 0 (Class Label)."],
     ]
     build_table(doc, dict_headers, dict_data, [1.4, 0.7, 1.1, 0.9, 2.9], hex_header_bg=HEX_SECONDARY)
@@ -365,6 +369,7 @@ def create_document():
 
     stats_headers = ["Variable", "Mean (μ)", "Std Dev (σ)", "Min", "25% (Q1)", "Median (50%)", "75% (Q3)", "Max", "Skewness"]
     stats_data = [
+        ["Age (Years)", "34.66", "6.59", "22.00", "30.00", "34.00", "39.00", "56.00", "+0.45 (Normal)"],
         ["Daily Hours", "8.83", "1.69", "6.00", "7.48", "8.78", "10.01", "13.00", "+0.08 (Normal)"],
         ["Overtime / Week", "12.85", "5.34", "0.00", "9.07", "12.85", "16.86", "25.00", "-0.04 (Symmetric)"],
         ["Absence Days", "4.61", "2.04", "0", "3.00", "5.00", "6.00", "8", "-0.16 (Symmetric)"],
@@ -375,12 +380,14 @@ def create_document():
     ]
     build_table(doc, stats_headers, stats_data, [1.3, 0.7, 0.8, 0.5, 0.7, 0.8, 0.7, 0.5, 0.9], hex_header_bg=HEX_PRIMARY)
 
-    add_heading_2(doc, "Class Balance & Epidemiological Alignment")
+    add_heading_2(doc, "Class Balance & Demographic Distribution")
     add_body_p(
         doc,
         "• Class 0 (No Burnout / Low Risk): 559 employees (55.90%)\n"
         "• Class 1 (Burnout / Severe Risk): 441 employees (44.10%)\n"
-        "• Class Ratio: 1.27 : 1 (statistically balanced; obviates the need for synthetic oversampling like SMOTE)."
+        "• Class Ratio: 1.27 : 1 (statistically balanced; obviates the need for synthetic oversampling like SMOTE).\n"
+        "• Gender Balance: 527 Female (52.70%) vs. 473 Male (47.30%) — empirically balanced.\n"
+        "• Age Distribution: Range 22 to 56 years (Mean: 34.66, Std: 6.59) representing career-stage progression."
     )
     add_body_p(
         doc,
@@ -474,8 +481,9 @@ def create_document():
     )
 
     # Save
-    doc.save(OUT_PATH)
-    print(f"[SUCCESS] Word document generated at: {OUT_PATH}")
+    doc.save(OUT_PATH_TAWAZON)
+    doc.save(OUT_PATH_LEGACY)
+    print(f"[SUCCESS] Word document generated at:\n  - {OUT_PATH_TAWAZON}\n  - {OUT_PATH_LEGACY}")
 
 
 if __name__ == "__main__":

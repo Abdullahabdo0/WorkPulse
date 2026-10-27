@@ -17,7 +17,8 @@ from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls, qn
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-OUT_PATH = os.path.join(ROOT, "WorkPulse_Dataset_Description_Arabic.docx")
+OUT_PATH_TAWAZON = os.path.join(ROOT, "Tawazon_Dataset_Description_Arabic.docx")
+OUT_PATH_LEGACY = os.path.join(ROOT, "WorkPulse_Dataset_Description_Arabic.docx")
 
 # Colors (High contrast, easy to read)
 COLOR_NAVY      = RGBColor(0x0F, 0x17, 0x2A)   # Navy 900
@@ -227,18 +228,19 @@ def create_arabic_document():
     # 1. Header Banner
     add_title_header(
         doc,
-        "بطاقة وصف البيانات — مشروع WorkPulse (N = 1,000)",
-        "منصة الذكاء الاصطناعي للتنبؤ بمخاطر الاحتراق الوظيفي | وثيقة معتمدة وموجزة"
+        "بطاقة وصف البيانات — منصة توازن Tawazon (N = 1,000)",
+        "منصة الذكاء الاصطناعي للتنبؤ بمخاطر الاحتراق الوظيفي وحماية صحة الموظفين | وثيقة معتمدة"
     )
 
     # 2. Executive Box
     add_highlight_box(
         doc,
         "📌 ملخص سريع ومباشر للدكتورة ولجنة المناقشة",
-        "تعتمد المنصة على بيانات حقيقية تم سحبها من مسابقة كاجل العالمية (HackerEarth)، بحجم أولي 22,750 سجلاً. "
+        "تعتمد منصة توازن على بيانات حقيقية تم سحبها من مسابقة كاجل العالمية (HackerEarth)، بحجم أولي 22,750 سجلاً. "
         "تم تطبيق مسار تنظيف كامل (Data Cleaning Pipeline) لإزالة 4,160 قيمة مفقودة و 5,948 صفاً مكرراً، "
-        "ثم استخراج عينة ممثلة لـ 1,000 موظف بنسبة احتراق متوازنة (44.1%) مطابقة تماماً للمعدلات الدولية الموثقة. "
-        "كما قمنا بدمج نصوص المشاعر لبناء نظام هجين متطور (Multi-Modal: 60% أرقام + 40% نصوص)."
+        "ثم استخراج عينة ممثلة لـ 1,000 موظف بنسبة احتراق متوازنة (44.1%) مع الحفاظ على البيانات الديموغرافية (النوع والعمر) "
+        "وربطها بأسماء عربية متوافقة تماماً. "
+        "كما قمنا بدمج نصوص المشاعر لبناء نظام هجين متطور (Multi-Modal: 60% أرقام + 40% نصوص باللغتين العربية والإنجليزية)."
     )
 
     # 3. Benchmark Source
@@ -263,18 +265,20 @@ def create_arabic_document():
     add_arabic_table(doc, cleaning_headers, cleaning_data, [1.3, 1.8, 0.8, 0.8, 2.3], hex_header=HEX_NAVY)
 
     # 5. Data Dictionary
-    add_sec_title(doc, "3. قاموس البيانات النهائي (Data Dictionary - 10 أعمدة)")
+    add_sec_title(doc, "3. قاموس البيانات النهائي (Data Dictionary - 12 عموداً)")
     dict_headers = ["اسم العمود", "النوع", "المدى / القيم", "الدور الوظيفي", "الوصف والاشتقاق"]
     dict_data = [
         ["employee_id", "نصي", "EMP0001 - EMP1000", "معرّف", "كود وظيفي فريد لكل موظف في المنصة"],
         ["name", "نصي", "اسم ثلاثي/ثنائي", "بيانات تعريفية", "اسم الموظف بالإنجليزية متوافق مع الجنس"],
+        ["gender", "نصي", "Male / Female", "ديموغرافي", "الجنس محفوظ ومطابق مباشرة من كاجل (527 إناث / 473 ذكور)"],
+        ["age", "صحيح", "22 – 56 سنة", "ديموغرافي", "عمر الموظف مستنتج علمياً من المستوى الوظيفي والخبرة (متوسط 34.7)"],
         ["avg_daily_hours", "عشري", "6.0 – 13.0 ساعة", "مدخل (مؤشر)", "ساعات العمل اليومية مشتقة من ضغط الموارد (RA)"],
         ["overtime_hours_week", "عشري", "0.0 – 25.0 ساعة", "مدخل (مؤشر)", "ساعات العمل الإضافية الأسبوعية"],
         ["absence_days_month", "صحيح", "0 – 8 أيام", "مدخل (مؤشر)", "أيام الغياب غير المخطط شهرياً (مرتبطة بالإجهاد)"],
         ["late_arrivals_month", "صحيح", "0 – 15 مرة", "مدخل (مؤشر)", "عدد مرات التأخير عن الحضور شهرياً"],
         ["tasks_assigned", "صحيح", "5 – 40 مهمة", "مدخل (مؤشر)", "حجم المهام والمسؤوليات المسندة شهرياً"],
         ["vacation_days_last_year", "صحيح", "0 – 25 يوم", "عامل حماية (-)", "رصيد الإجازات المستهلكة (علاقة عكسية مع الإرهاق)"],
-        ["feedback", "نصي", "جملة إنجليزية معبرة", "مدخل NLP", "شكوى أو رأي الموظف لتحليله بـ DistilBERT"],
+        ["feedback", "نصي", "نص عربي / إنجليزي", "مدخل NLP", "انطباع ورأي الموظف لتحليله بمحركات المشاعر"],
         ["burnout", "ثنائي", "0 أو 1", "الهدف (Target)", "1 = مصاب باحتراق (Burn Rate >= 0.50)، 0 = سليم"],
     ]
     add_arabic_table(doc, dict_headers, dict_data, [1.4, 0.6, 1.2, 1.0, 2.8], hex_header=HEX_BLUE)
@@ -283,6 +287,7 @@ def create_arabic_document():
     add_sec_title(doc, "4. الإحصائيات الوصفية الدقيقة لـ 1,000 موظف")
     stats_headers = ["المتغير", "المتوسط (Mean)", "الانحراف (Std)", "الحد الأدنى", "الوسيط (50%)", "الحد الأقصى"]
     stats_data = [
+        ["العمر (سنوات)", "34.66 سنة", "6.59", "22.00", "34.00", "56.00"],
         ["ساعات العمل اليومية", "8.83 ساعة", "1.69", "6.00", "8.78", "13.00"],
         ["الساعات الإضافية (أسبوعياً)", "12.85 ساعة", "5.34", "0.00", "12.85", "25.00"],
         ["أيام الغياب شهرياً", "4.61 يوم", "2.04", "0", "5.00", "8"],
@@ -292,6 +297,7 @@ def create_arabic_document():
     ]
     add_arabic_table(doc, stats_headers, stats_data, [1.8, 1.0, 1.0, 0.9, 1.0, 1.1], hex_header=HEX_NAVY)
 
+    add_bullet(doc, "توزيع الجنس (Gender)", "527 إناث (52.7%) مقابل 473 ذكور (47.3%) — توازن ديموغرافي طبيعي ومطابق للواقع")
     add_bullet(doc, "توزيع فئة الهدف (Burnout)", "559 موظف سليم (55.9%) مقابل 441 موظف في خطر (44.1%)")
     add_bullet(doc, "التوازن الإحصائي", "نسبة 1.27 : 1 تضمن تدريب نموذج الذكاء الاصطناعي دون الحاجة لتوليد زائف (SMOTE)")
 
@@ -300,6 +306,7 @@ def create_arabic_document():
     add_bullet(doc, "المشاعر السلبية (Negative)", "361 موظفاً (36.1%) — مثل: 'I feel completely exhausted and overwhelmed.'")
     add_bullet(doc, "المشاعر المحايدة (Neutral)", "287 موظفاً (28.7%) — مثل: 'Work is fine, some days are tough but it is manageable.'")
     add_bullet(doc, "المشاعر الإيجابية (Positive)", "352 موظفاً (35.2%) — مثل: 'I love my job and feel very motivated every day.'")
+    add_bullet(doc, "دعم اللغتين العربية والإنجليزية", "تم تطوير محرك NLP عربي مخصص للتعامل مع المفردات المهنية وسياقات النفي بجانب DistilBERT الإنجليزي.")
 
     # 8. Model Results
     add_sec_title(doc, "6. نتائج تقييم النموذج النهائي (Random Forest)")
@@ -312,8 +319,8 @@ def create_arabic_document():
     add_highlight_box(
         doc,
         "س: لماذا لم تستخدموا داتا كاجل كما هي بدون تنظيف وتعديل؟",
-        "ج: لأن الداتا الخام بها 4,622 قيمة مفقودة و 5,948 سجلاً مكرراً، كما أنها تفتقر لأي نصوص للمشاعر. "
-        "بناء مسار التنظيف سمح لنا بإصلاح العيوب وتجهيز نظام هجين متطور يجمع بين الأرقام ونصوص الـ NLP.",
+        "ج: لأن الداتا الخام بها 4,622 قيمة مفقودة و 5,948 سجلاً مكرراً، كما أنها تفتقر لنصوص المشاعر والعمر الصريح. "
+        "بناء مسار التنظيف سمح لنا بإصلاح العيوب واستنتاج الأعمار ديموغرافياً وتجهيز نظام هجين متطور يجمع بين الأرقام ونصوص الـ NLP.",
         hex_bg=HEX_GRAY_BG,
         hex_border=HEX_NAVY
     )
@@ -326,8 +333,9 @@ def create_arabic_document():
         hex_border=HEX_BLUE
     )
 
-    doc.save(OUT_PATH)
-    print(f"[SUCCESS] Ultra-clear Arabic Word document generated: {OUT_PATH}")
+    doc.save(OUT_PATH_TAWAZON)
+    doc.save(OUT_PATH_LEGACY)
+    print(f"[SUCCESS] Ultra-clear Arabic Word document generated:\n  - {OUT_PATH_TAWAZON}\n  - {OUT_PATH_LEGACY}")
 
 
 if __name__ == "__main__":
