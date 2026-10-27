@@ -30,3 +30,7 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 .DS_Store
+
+# Office temporary lock files
+~$*
+*.tmp
