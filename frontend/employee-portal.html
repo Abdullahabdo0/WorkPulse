@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WorkPulse — Employee Portal</title>
+  <title>Tawazon — Employee Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <style>
     .user-badge-header {
       background: #eff6ff;
@@ -62,7 +63,7 @@
 
 <nav>
   <div class="nav-start">
-    <a href="employee-portal.html" class="nav-brand">⚡ Work<span>Pulse</span></a>
+    <a href="employee-portal.html" class="nav-brand">⚡ Tawa<span>zon</span></a>
   </div>
   <div class="nav-end">
     <span style="color:#94a3b8; font-size:.88rem; font-weight:600; margin-inline-end:.5rem;" id="navUserName"></span>
@@ -77,6 +78,7 @@
     <div class="user-info">
       <h2 id="profileFullName">—</h2>
       <p id="profileUsername">@—</p>
+      <p id="profileMeta" style="color:var(--muted); font-size:.85rem; margin-top:.2rem;"></p>
     </div>
     <div>
       <span class="badge" id="currentRiskBadge" style="font-size:.9rem; padding:.5rem 1rem;">جاري التحميل...</span>
@@ -89,12 +91,9 @@
       <div>
         <h2 style="font-size:1.3rem; font-weight:800;" id="formHeaderTitle">تقييم وتحديث الحالة (Burnout Assessment)</h2>
         <p style="color:var(--muted); font-size:.85rem; margin-top:.2rem;">
-          يمكنك تعديل بياناتك وحالتك الحالية في أي وقت ليعاد قياس الخطر فوراً.
+          يمكنك تعبئة وتحديث بياناتك في أي وقت ليقوم الذكاء الاصطناعي بقياس مستوى الإرهاق بدقة.
         </p>
       </div>
-      <button type="button" class="page-btn" onclick="prefillSample()" style="background:#f1f5f9; font-weight:600;">
-        ⚡ تعبئة بيانات نموذجية
-      </button>
     </div>
 
     <form id="employeeAssessForm" novalidate>
@@ -136,12 +135,12 @@
         </div>
 
         <div class="form-group full-width">
-          <label for="feedback" data-i18n="assess_fb_label">Employee Feedback (English only) *</label>
+          <label for="feedback" data-i18n="assess_fb_label">Employee Feedback (Arabic or English) *</label>
           <textarea id="feedback" rows="3"
             data-i18n-ph="assess_fb_placeholder"
             placeholder="How do you feel about your workload recently?" required></textarea>
-          <span class="hint" style="color:var(--yellow);" data-i18n="assess_fb_hint">
-            Write in English — the AI sentiment model supports English only.
+          <span class="hint" style="color:var(--muted);" data-i18n="assess_fb_hint">
+            Write in Arabic or English — the AI analyzes both languages.
           </span>
         </div>
       </div>
@@ -157,6 +156,13 @@
 
   <!-- Live Diagnosis Result Card -->
   <div class="result-card" id="diagnosisResult" style="margin-top:2rem;">
+    <!-- Printable Report Header -->
+    <div class="print-only-header">
+      <h2 style="font-size:1.5rem;font-weight:800;color:#1e3a8a;" data-i18n="print_report_title">Tawazon AI — Burnout Risk Diagnostic Report</h2>
+      <p style="color:#64748b;font-size:.9rem;margin-top:.2rem;" data-i18n="print_report_sub">Official AI Workplace Health & Risk Analysis</p>
+      <p style="font-size:.85rem;color:#1e293b;font-weight:700;margin-top:.4rem;" id="printEmployeeName"></p>
+    </div>
+
     <div class="result-header">
       <div class="result-score-big" id="resScore">—</div>
       <div class="result-meta">
@@ -181,11 +187,35 @@
           data-i18n="assess_reasons_title">Top Contributing Factors</h4>
       <ul class="reasons-list" id="resReasons"></ul>
     </div>
+
+    <!-- Wellness Tips Card -->
+    <div id="wellnessCard" style="display:none; margin-top:1.5rem; background:var(--surface); border-radius:1rem; padding:1.5rem; border:1px solid var(--border);">
+      <h4 id="wellnessTitle" style="font-size:1rem; font-weight:700; margin-bottom:1rem; color:var(--text);"></h4>
+      <ul id="wellnessList" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.65rem;"></ul>
+    </div>
+
+    <!-- Export to PDF Button -->
+    <button type="button" class="btn-export-pdf" onclick="triggerEmployeePrint()">
+      📄 <span data-i18n="btn_export_pdf">Export / Print PDF Report</span>
+    </button>
   </div>
 
   <!-- Assessment History Section -->
   <div class="history-card" id="historyCard">
-    <h3>📜 سجل التقييمات السابقة وتطور الحالة (Assessment History)</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem;">
+      <h3 style="margin:0;">📜 سجل التقييمات السابقة وتطور الحالة (Assessment History)</h3>
+    </div>
+
+    <!-- Trend Chart Container -->
+    <div id="chartContainer" style="margin-bottom:1.5rem; background:#f8fafc; padding:1.25rem; border-radius:12px; border:1px solid #e2e8f0; display:none;">
+      <h4 style="font-size:0.95rem; font-weight:700; margin-bottom:0.75rem; color:#1e293b;" data-i18n="portal_chart_title">
+        📈 مسار وتطور مؤشر الإرهاق عبر التقييمات (Burnout Risk Score Trend)
+      </h4>
+      <div style="height:220px; position:relative;">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
     <div id="historyList">
       <p style="color:var(--muted); font-size:.9rem;">لا توجد تقييمات سابقة مسجلة.</p>
     </div>
@@ -204,6 +234,23 @@
   document.getElementById("profileUsername").textContent = `@${currentUser.username}`;
   document.getElementById("navUserName").textContent = currentUser.full_name;
 
+  if (document.getElementById("profileMeta")) {
+    const isAr = typeof i18n !== "undefined" && i18n.lang() === "ar";
+    const metaParts = [];
+    if (currentUser.gender) {
+      let g = currentUser.gender;
+      if (isAr) {
+        if (g.toLowerCase() === "male" || g === "ذكر") g = "ذكر";
+        else if (g.toLowerCase() === "female" || g === "أنثى") g = "أنثى";
+      }
+      metaParts.push(g);
+    }
+    if (currentUser.age) {
+      metaParts.push(isAr ? `${currentUser.age} سنة` : `${currentUser.age} yrs`);
+    }
+    document.getElementById("profileMeta").textContent = metaParts.join(" • ");
+  }
+
   async function loadUserHistory() {
     try {
       const res = await fetch(`${API}/assessments/${currentUser.id}/history`);
@@ -212,6 +259,7 @@
 
       if (history.length > 0) {
         const latest = history[0];
+        _cachedLatest = latest;
         displayDiagnosis(latest);
 
         // Pre-fill form inputs with latest data so employee can easily update
@@ -225,8 +273,21 @@
 
         renderHistoryList(history);
       } else {
-        document.getElementById("currentRiskBadge").textContent = "لم يتم التقييم بعد (Not Assessed)";
-        document.getElementById("currentRiskBadge").className = "badge";
+        const isAr = typeof i18n !== "undefined" && i18n.lang() === "ar";
+        const badge = document.getElementById("currentRiskBadge");
+        badge.textContent = isAr ? "لم يتم التقييم بعد (بانتظار إدخال بياناتك)" : "Not Assessed Yet (Awaiting Assessment)";
+        badge.className = "badge";
+        badge.style.background = "#f1f5f9";
+        badge.style.color = "#64748b";
+        badge.style.border = "1px solid #cbd5e1";
+
+        const card = document.getElementById("diagnosisResult");
+        if (card) card.classList.remove("show");
+
+        const historyContainer = document.getElementById("historyList");
+        if (historyContainer) {
+          historyContainer.innerHTML = `<p style="color:var(--muted); font-size:.9rem; padding:0.5rem 0;">${isAr ? "لم يتم إجراء أي تقييم بعد. يرجى تعبئة مؤشرات ساعات العمل وملاحظاتك أعلاه ثم الضغط على زر الحفظ لقياس مستوى الخطر فوراً." : "No assessment recorded yet. Please fill your daily hours and feedback above and click Save to compute your burnout diagnosis."}</p>`;
+        }
       }
     } catch (err) {
       console.error(err);
@@ -254,10 +315,91 @@
     document.getElementById("resSentiment").textContent = `${(data.sentiment_risk * 100).toFixed(1)}%`;
 
     document.getElementById("resReasons").innerHTML =
-      data.top_reasons.map(r => `<li>${r}</li>`).join("");
+      data.top_reasons.map(r => `<li>${i18n.translateReason(r)}</li>`).join("");
+
+    // ── Personalized Wellness Tips (Dynamic based on Level & SHAP Root Causes) ──
+    const tips = getPersonalizedWellnessTips(data);
+    const wellnessCard = document.getElementById("wellnessCard");
+    document.getElementById("wellnessTitle").textContent = i18n.t("wellness_title");
+
+    const tipColors = { high: "#ef4444", medium: "#f59e0b", low: "#10b981" };
+    wellnessCard.style.borderLeft = `4px solid ${tipColors[lvl] || "#3b82f6"}`;
+
+    if (Array.isArray(tips) && tips.length > 0) {
+      document.getElementById("wellnessList").innerHTML = tips.map(tip =>
+        `<li style="display:flex;align-items:flex-start;gap:.5rem;font-size:.9rem;color:var(--text);line-height:1.5;">
+           <span style="flex-shrink:0;">${tip.split(" ")[0]}</span>
+           <span>${tip.split(" ").slice(1).join(" ")}</span>
+         </li>`
+      ).join("");
+      wellnessCard.style.display = "block";
+    }
+  }
+
+  let _trendChartInstance = null;
+
+  function renderTrendChart(history) {
+    const chartCard = document.getElementById("chartContainer");
+    if (!history || history.length < 2) {
+      chartCard.style.display = "none";
+      return;
+    }
+    chartCard.style.display = "block";
+
+    // Chronological order (oldest to newest)
+    const chronological = [...history].reverse();
+    const labels = chronological.map(item => item.created_at ? item.created_at.split(" ")[0] : "Assessment");
+    const scores = chronological.map(item => item.risk_score);
+
+    const ctx = document.getElementById("trendChart").getContext("2d");
+    if (_trendChartInstance) {
+      _trendChartInstance.destroy();
+    }
+
+    const latestScore = scores[scores.length - 1];
+    const lineColor = latestScore >= 67 ? "#ef4444" : latestScore >= 34 ? "#f59e0b" : "#10b981";
+
+    _trendChartInstance = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: i18n.lang() === "ar" ? "درجة الخطر (%)" : "Risk Score (%)",
+          data: scores,
+          borderColor: lineColor,
+          backgroundColor: lineColor + "22",
+          fill: true,
+          tension: 0.35,
+          pointRadius: 5,
+          pointHoverRadius: 8,
+          pointBackgroundColor: lineColor,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            min: 0,
+            max: 100,
+            ticks: {
+              callback: val => val + "%"
+            },
+            grid: { color: "#f1f5f9" }
+          },
+          x: {
+            grid: { display: false }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
   }
 
   function renderHistoryList(history) {
+    renderTrendChart(history);
     const container = document.getElementById("historyList");
     container.innerHTML = history.map(item => `
       <div class="history-item">
@@ -273,14 +415,11 @@
     `).join("");
   }
 
-  function prefillSample() {
-    document.getElementById("avg_daily_hours").value = "10.5";
-    document.getElementById("overtime_hours_week").value = "15";
-    document.getElementById("absence_days_month").value = "3";
-    document.getElementById("late_arrivals_month").value = "4";
-    document.getElementById("tasks_assigned").value = "35";
-    document.getElementById("vacation_days_last_year").value = "2";
-    document.getElementById("feedback").value = "I feel very stressed and overwhelmed with the current project workload.";
+  function triggerEmployeePrint() {
+    const d = new Date();
+    document.getElementById("printEmployeeName").textContent =
+      `الموظف: ${currentUser.full_name} (@${currentUser.username}) — التاريخ: ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+    window.print();
   }
 
   // Handle Form Submit (Save / Update Assessment)
@@ -341,6 +480,14 @@
     } finally {
       btn.disabled = false;
       spn.style.display = "none";
+    }
+  });
+
+  let _cachedLatest = null;
+
+  document.addEventListener("langchange", () => {
+    if (_cachedLatest) {
+      displayDiagnosis(_cachedLatest);
     }
   });
 

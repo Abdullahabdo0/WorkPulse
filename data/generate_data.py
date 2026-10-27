@@ -28,7 +28,7 @@ SEED = 42
 np.random.seed(SEED)
 random.seed(SEED)
 
-N_EMPLOYEES = 50
+N_EMPLOYEES = 1000
 
 # ── Employee names pool (Arabic transliterated + common names) ───────────────
 EMPLOYEE_NAMES = [

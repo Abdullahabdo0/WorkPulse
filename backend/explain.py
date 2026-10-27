@@ -65,12 +65,20 @@ def get_top_reasons(
         explainer = shap.TreeExplainer(model)
         shap_values = explainer.shap_values(df_input)
 
-        # For binary classification, shap_values is a list [class0, class1]
-        # We want class 1 (burnout = True)
+        # For binary classification:
+        # If ndarray of shape (n_samples, n_features, n_classes) -> take sample 0, class 1
+        # If list of [class0, class1] -> take class 1, sample 0
         if isinstance(shap_values, list):
             sv = shap_values[1][0]
+        elif isinstance(shap_values, np.ndarray):
+            if shap_values.ndim == 3:
+                sv = shap_values[0, :, 1]
+            elif shap_values.ndim == 2:
+                sv = shap_values[0]
+            else:
+                sv = shap_values.flatten()
         else:
-            sv = shap_values[0]
+            sv = np.array(shap_values).flatten()
 
         # Sort features by absolute SHAP value (descending)
         indices = np.argsort(np.abs(sv))[::-1]

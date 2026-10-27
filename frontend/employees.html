@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WorkPulse — Employees</title>
+  <title>Tawazon — Employees</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
@@ -12,7 +12,7 @@
 
 <nav>
   <div class="nav-start">
-    <a href="index.html" class="nav-brand">⚡ Work<span>Pulse</span> (Admin)</a>
+    <a href="index.html" class="nav-brand">⚡ Tawa<span>zon</span> (Admin)</a>
     <a href="index.html"           data-i18n="nav_dashboard">Dashboard</a>
     <a href="employees.html"       data-i18n="nav_employees" class="active">Employees</a>
   </div>
@@ -29,10 +29,15 @@
       <h1 class="page-title" style="margin-bottom:.25rem;" data-i18n="emp_title">👥 Employee Workforce Directory</h1>
       <p style="color:var(--muted); font-size:.9rem;" data-i18n="emp_subtitle">Comprehensive burnout risk assessment, monitoring and profile management</p>
     </div>
-    <button class="btn-primary" onclick="openAddModal()">
-      <span>➕</span>
-      <span data-i18n="emp_btn_add">+ Add New Employee</span>
-    </button>
+    <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+      <button class="btn-export-pdf" style="margin-top:0;" onclick="exportEmployeesCSV()">
+        📥 <span data-i18n="emp_btn_export_csv">Export CSV</span>
+      </button>
+      <button class="btn-primary" onclick="openAddModal()">
+        <span>➕</span>
+        <span data-i18n="emp_btn_add">+ Add New Employee</span>
+      </button>
+    </div>
   </div>
 
   <div class="card">
@@ -41,10 +46,11 @@
         <input type="text" class="search-box" id="searchInput"
                data-i18n-ph="emp_search" placeholder="Search by Name, Username or Employee ID..." />
         <select class="filter-select" id="levelFilter">
-          <option value=""       data-i18n="emp_filter_all">All Risk Levels</option>
-          <option value="Low"    data-i18n="emp_filter_low">🟢 Low Risk</option>
-          <option value="Medium" data-i18n="emp_filter_med">🟡 Medium Risk</option>
-          <option value="High"   data-i18n="emp_filter_high">🔴 High Risk</option>
+          <option value=""           data-i18n="emp_filter_all">All Risk Levels</option>
+          <option value="Unassessed" data-i18n="emp_filter_unassessed">⚪ Unassessed</option>
+          <option value="Low"        data-i18n="emp_filter_low">🟢 Low Risk</option>
+          <option value="Medium"     data-i18n="emp_filter_med">🟡 Medium Risk</option>
+          <option value="High"       data-i18n="emp_filter_high">🔴 High Risk</option>
         </select>
       </div>
       <div>
@@ -69,7 +75,7 @@
 
 <!-- ── Modal: Add Employee ────────────────────────────────── -->
 <div class="modal-backdrop" id="addModal">
-  <div class="modal-dialog" style="max-width:480px;">
+  <div class="modal-dialog" style="max-width:500px;">
     <div class="modal-header">
       <h3 data-i18n="emp_modal_add_title">Add New Employee & Create Account</h3>
       <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
@@ -91,6 +97,20 @@
           <div class="form-group">
             <label data-i18n="auth_password">Password (To give employee) *</label>
             <input type="text" id="addPassword" placeholder="e.g. pass1234" required />
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div class="form-group">
+              <label data-i18n="emp_col_gender">Gender *</label>
+              <select id="addGender" required>
+                <option value="" disabled selected data-i18n="emp_gender_select">Select Gender...</option>
+                <option value="ذكر" data-i18n="gender_male">Male (ذكر)</option>
+                <option value="أنثى" data-i18n="gender_female">Female (أنثى)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label data-i18n="emp_col_age">Age *</label>
+              <input type="number" id="addAge" min="18" max="75" placeholder="e.g. 28" required />
+            </div>
           </div>
         </div>
       </div>
@@ -129,6 +149,18 @@
           <div class="form-group">
             <label data-i18n="emp_modal_new_pwd">New Password (leave empty to keep current)</label>
             <input type="text" id="editPassword" placeholder="Leave blank to keep unchanged" />
+          </div>
+          <div class="form-group">
+            <label data-i18n="emp_col_gender">Gender</label>
+            <select id="editGender">
+              <option value="">—</option>
+              <option value="ذكر" data-i18n="gender_male">Male (ذكر)</option>
+              <option value="أنثى" data-i18n="gender_female">Female (أنثى)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label data-i18n="emp_col_age">Age</label>
+            <input type="number" id="editAge" min="18" max="75" placeholder="e.g. 28" />
           </div>
         </div>
 
@@ -213,12 +245,14 @@
     document.getElementById("editFullName").value = emp.name;
     document.getElementById("editUsername").value = emp.username;
     document.getElementById("editPassword").value = "";
-    document.getElementById("editHours").value = emp.avg_daily_hours;
-    document.getElementById("editOvertime").value = emp.overtime_hours_week;
-    document.getElementById("editAbsence").value = emp.absence_days_month;
-    document.getElementById("editLate").value = emp.late_arrivals_month || 0;
-    document.getElementById("editTasks").value = emp.tasks_assigned;
-    document.getElementById("editVacation").value = emp.vacation_days_last_year || 0;
+    document.getElementById("editGender").value = emp.gender || "";
+    document.getElementById("editAge").value = emp.age != null ? emp.age : "";
+    document.getElementById("editHours").value = emp.avg_daily_hours != null ? emp.avg_daily_hours : "";
+    document.getElementById("editOvertime").value = emp.overtime_hours_week != null ? emp.overtime_hours_week : "";
+    document.getElementById("editAbsence").value = emp.absence_days_month != null ? emp.absence_days_month : "";
+    document.getElementById("editLate").value = emp.late_arrivals_month != null ? emp.late_arrivals_month : "";
+    document.getElementById("editTasks").value = emp.tasks_assigned != null ? emp.tasks_assigned : "";
+    document.getElementById("editVacation").value = emp.vacation_days_last_year != null ? emp.vacation_days_last_year : "";
     document.getElementById("editFeedback").value = emp.feedback || "";
 
     document.getElementById("editModal").classList.add("show");
@@ -279,17 +313,33 @@
       return;
     }
 
-    const rows = slice.map(e => `
+    const rows = slice.map(e => {
+      const isAr = typeof i18n !== "undefined" && i18n.lang() === "ar";
+      let genderStr = "";
+      if (e.gender) {
+        if (isAr) {
+          genderStr = (e.gender.toLowerCase() === "male" || e.gender === "ذكر") ? "ذكر" : "أنثى";
+        } else {
+          genderStr = (e.gender === "أنثى" || e.gender.toLowerCase() === "female") ? "Female" : "Male";
+        }
+      }
+      const ageStr = e.age ? `${e.age} ${isAr ? "سنة" : "yrs"}` : "";
+      const metaLine = [genderStr, ageStr].filter(Boolean).join(" • ");
+
+      return `
       <tr>
         <td><strong>${escapeHTML(e.employee_id)}</strong></td>
         <td>
           <div style="font-weight:700;">${escapeHTML(e.name || "—")}</div>
-          <div style="font-size:.78rem; color:var(--muted);">@${escapeHTML(e.username)}</div>
+          <div style="font-size:.78rem; color:var(--muted); display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+            <span>@${escapeHTML(e.username)}</span>
+            ${metaLine ? `<span>• ${escapeHTML(metaLine)}</span>` : ""}
+          </div>
         </td>
-        <td>${e.avg_daily_hours.toFixed(1)}h</td>
-        <td>${e.overtime_hours_week.toFixed(1)}h</td>
-        <td>${e.absence_days_month}d</td>
-        <td>${e.tasks_assigned}</td>
+        <td>${e.avg_daily_hours != null ? `${e.avg_daily_hours.toFixed(1)}h` : '<span style="color:var(--muted);">—</span>'}</td>
+        <td>${e.overtime_hours_week != null ? `${e.overtime_hours_week.toFixed(1)}h` : '<span style="color:var(--muted);">—</span>'}</td>
+        <td>${e.absence_days_month != null ? `${e.absence_days_month}d` : '<span style="color:var(--muted);">—</span>'}</td>
+        <td>${e.tasks_assigned != null ? e.tasks_assigned : '<span style="color:var(--muted);">—</span>'}</td>
         <td>${scoreBarHTML(e.risk_score, e.level)}</td>
         <td>${badgeHTML(e.level)}</td>
         <td class="col-actions">
@@ -302,7 +352,8 @@
             </button>
           </div>
         </td>
-      </tr>`).join("");
+      </tr>`;
+    }).join("");
 
     document.getElementById("tableContainer").innerHTML = `
       <table>
@@ -347,7 +398,9 @@
     const payload = {
       full_name: document.getElementById("addFullName").value.trim(),
       username: document.getElementById("addUsername").value.trim(),
-      password: document.getElementById("addPassword").value
+      password: document.getElementById("addPassword").value,
+      gender: document.getElementById("addGender").value,
+      age: parseInt(document.getElementById("addAge").value)
     };
 
     try {
@@ -382,18 +435,30 @@
 
     const userId = parseInt(document.getElementById("editUserId").value);
     const pwd = document.getElementById("editPassword").value.trim();
+    const genderVal = document.getElementById("editGender").value;
+    const ageVal = document.getElementById("editAge").value;
 
     const payload = {
       full_name: document.getElementById("editFullName").value.trim(),
       username: document.getElementById("editUsername").value.trim(),
-      avg_daily_hours: parseFloat(document.getElementById("editHours").value),
-      overtime_hours_week: parseFloat(document.getElementById("editOvertime").value),
-      absence_days_month: parseInt(document.getElementById("editAbsence").value),
-      late_arrivals_month: parseInt(document.getElementById("editLate").value),
-      tasks_assigned: parseInt(document.getElementById("editTasks").value),
-      vacation_days_last_year: parseInt(document.getElementById("editVacation").value),
-      feedback: document.getElementById("editFeedback").value.trim()
+      gender: genderVal || null,
+      age: ageVal ? parseInt(ageVal) : null,
     };
+
+    const h = document.getElementById("editHours").value;
+    if (h !== "") payload.avg_daily_hours = parseFloat(h);
+    const ot = document.getElementById("editOvertime").value;
+    if (ot !== "") payload.overtime_hours_week = parseFloat(ot);
+    const abs = document.getElementById("editAbsence").value;
+    if (abs !== "") payload.absence_days_month = parseInt(abs);
+    const late = document.getElementById("editLate").value;
+    if (late !== "") payload.late_arrivals_month = parseInt(late);
+    const tasks = document.getElementById("editTasks").value;
+    if (tasks !== "") payload.tasks_assigned = parseInt(tasks);
+    const vac = document.getElementById("editVacation").value;
+    if (vac !== "") payload.vacation_days_last_year = parseInt(vac);
+    const fb = document.getElementById("editFeedback").value.trim();
+    if (fb !== "") payload.feedback = fb;
 
     if (pwd) payload.password = pwd;
 
@@ -451,6 +516,39 @@
   document.getElementById("searchInput").addEventListener("input",   () => { currentPage=1; renderTable(); });
   document.getElementById("levelFilter").addEventListener("change",  () => { currentPage=1; renderTable(); });
   document.getElementById("pageSizeSelect").addEventListener("change",() => { currentPage=1; renderTable(); });
+
+  function exportEmployeesCSV() {
+    if (!allEmployees || allEmployees.length === 0) {
+      alert("No employee data available to export.");
+      return;
+    }
+    const headers = ["Employee ID", "Full Name", "Username", "Gender", "Age", "Daily Hours", "Overtime/Wk", "Absences", "Late Arrivals", "Tasks", "Vacation Days", "Burnout Score (%)", "Risk Level"];
+    const rows = allEmployees.map(e => [
+      e.employee_id || e.user_id,
+      `"${(e.name || e.full_name || '').replace(/"/g, '""')}"`,
+      e.username,
+      e.gender || '',
+      e.age != null ? e.age : '',
+      e.avg_daily_hours != null ? e.avg_daily_hours : '',
+      e.overtime_hours_week != null ? e.overtime_hours_week : '',
+      e.absence_days_month != null ? e.absence_days_month : '',
+      e.late_arrivals_month != null ? e.late_arrivals_month : '',
+      e.tasks_assigned != null ? e.tasks_assigned : '',
+      e.vacation_days_last_year != null ? e.vacation_days_last_year : '',
+      e.risk_score != null ? e.risk_score : '',
+      e.level || 'Unassessed'
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Tawazon_Employees_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 
   // Re-render table headers on language change
   document.addEventListener("langchange", renderTable);

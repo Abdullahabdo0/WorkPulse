@@ -55,6 +55,11 @@ MODEL_PATH = ROOT.parent / "models" / "workload_model.pkl"
 
 # ── Global state ──────────────────────────────────────────────────────────────
 workload_model = None
+if MODEL_PATH.exists():
+    try:
+        workload_model = joblib.load(MODEL_PATH)
+    except Exception as e:
+        print(f"[Init] Model load note: {e}")
 
 # ── Dependency: DB Session ───────────────────────────────────────────────────
 def get_db():
@@ -100,7 +105,7 @@ async def lifespan(app: FastAPI):
 
 # ── FastAPI App ───────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="WorkPulse — Enterprise Burnout Risk System",
+    title="Tawazon — Enterprise Burnout Risk System",
     description="Full-stack AI Employee Burnout Prediction with Authentication & Database.",
     version="2.0.0",
     lifespan=lifespan,
@@ -143,19 +148,16 @@ class CreateEmployeeRequest(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=100)
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=4, max_length=50)
-    avg_daily_hours: float = Field(default=8.0, ge=0.0, le=24.0)
-    overtime_hours_week: float = Field(default=0.0, ge=0.0, le=80.0)
-    absence_days_month: int = Field(default=0, ge=0, le=31)
-    late_arrivals_month: int = Field(default=0, ge=0, le=31)
-    tasks_assigned: int = Field(default=10, ge=0, le=100)
-    vacation_days_last_year: int = Field(default=15, ge=0, le=365)
-    feedback: Optional[str] = Field(default="Normal workload, feeling good.", max_length=2000)
+    gender: Optional[str] = Field(default=None, max_length=20)
+    age: Optional[int] = Field(default=None, ge=15, le=100)
 
 
 class UpdateEmployeeRequest(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=100)
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     password: Optional[str] = Field(None, min_length=4, max_length=50)
+    gender: Optional[str] = Field(None, max_length=20)
+    age: Optional[int] = Field(None, ge=15, le=100)
     avg_daily_hours: Optional[float] = Field(None, ge=0.0, le=24.0)
     overtime_hours_week: Optional[float] = Field(None, ge=0.0, le=80.0)
     absence_days_month: Optional[int] = Field(None, ge=0, le=31)
@@ -174,6 +176,8 @@ class UserResponse(BaseModel):
     id: int
     username: str
     full_name: str
+    gender: Optional[str] = None
+    age: Optional[int] = None
     role: str
 
 
@@ -217,15 +221,17 @@ class EmployeeSummary(BaseModel):
     employee_id: str
     name: str
     username: str
-    avg_daily_hours: float
-    overtime_hours_week: float
-    absence_days_month: int
-    late_arrivals_month: int = 0
-    tasks_assigned: int
-    vacation_days_last_year: int = 0
-    feedback: str = ""
-    risk_score: int
-    level: str
+    gender: Optional[str] = None
+    age: Optional[int] = None
+    avg_daily_hours: Optional[float] = None
+    overtime_hours_week: Optional[float] = None
+    absence_days_month: Optional[int] = None
+    late_arrivals_month: Optional[int] = None
+    tasks_assigned: Optional[int] = None
+    vacation_days_last_year: Optional[int] = None
+    feedback: Optional[str] = ""
+    risk_score: Optional[int] = None
+    level: str = "Unassessed"
     last_assessed: str
 
 
@@ -298,10 +304,14 @@ def _seed_employees_from_csv(db: Session):
         emp_id = str(row["employee_id"])
         full_name = str(row["name"])
         username = emp_id.lower()
+        gender_val = str(row["gender"]) if "gender" in row and pd.notna(row["gender"]) else None
+        age_val = int(row["age"]) if "age" in row and pd.notna(row["age"]) else None
 
         user = User(
             username=username,
             full_name=full_name,
+            gender=gender_val,
+            age=age_val,
             role="employee",
             hashed_password=hash_password("123456")  # default password for seeded accounts
         )
@@ -356,6 +366,8 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         id=user.id,
         username=user.username,
         full_name=user.full_name,
+        gender=user.gender,
+        age=user.age,
         role=user.role
     )
 
@@ -485,16 +497,16 @@ def get_employees(
             score = latest.risk_score
             assessed_at = latest.created_at.strftime("%Y-%m-%d %H:%M")
         else:
-            lvl = "Low"
-            hours = 8.0
-            ot = 0.0
-            abs_days = 0
-            late = 0
-            tasks = 10
-            vac = 15
-            fb = "Normal"
-            score = 15
-            assessed_at = "New / Not assessed"
+            lvl = "Unassessed"
+            hours = None
+            ot = None
+            abs_days = None
+            late = None
+            tasks = None
+            vac = None
+            fb = ""
+            score = None
+            assessed_at = "لم يقيّم بعد / Unassessed"
 
         if level and lvl.lower() != level.lower():
             continue
@@ -508,6 +520,8 @@ def get_employees(
             employee_id=emp_id,
             name=u.full_name,
             username=u.username,
+            gender=u.gender,
+            age=u.age,
             avg_daily_hours=hours,
             overtime_hours_week=ot,
             absence_days_month=abs_days,
@@ -538,43 +552,12 @@ def create_employee(req: CreateEmployeeRequest, db: Session = Depends(get_db)):
     user = User(
         username=req.username.lower(),
         full_name=req.full_name.strip(),
+        gender=req.gender.strip() if req.gender else None,
+        age=req.age,
         role="employee",
         hashed_password=hash_password(req.password)
     )
     db.add(user)
-    db.flush()
-
-    # Calculate initial risk assessment
-    data = {
-        "avg_daily_hours": req.avg_daily_hours,
-        "overtime_hours_week": req.overtime_hours_week,
-        "absence_days_month": req.absence_days_month,
-        "late_arrivals_month": req.late_arrivals_month,
-        "tasks_assigned": req.tasks_assigned,
-        "vacation_days_last_year": req.vacation_days_last_year,
-        "feedback": req.feedback or "Normal workload"
-    }
-    w_prob = _get_workload_prob(data)
-    s_risk = _sentiment_risk(data["feedback"])
-    score, level = compute_risk(w_prob, s_risk)
-    reasons = get_top_reasons(workload_model, data, s_risk, top_n=3)
-
-    assessment = Assessment(
-        user_id=user.id,
-        avg_daily_hours=req.avg_daily_hours,
-        overtime_hours_week=req.overtime_hours_week,
-        absence_days_month=req.absence_days_month,
-        late_arrivals_month=req.late_arrivals_month,
-        tasks_assigned=req.tasks_assigned,
-        vacation_days_last_year=req.vacation_days_last_year,
-        feedback=data["feedback"],
-        risk_score=score,
-        level=level,
-        workload_probability=round(w_prob, 4),
-        sentiment_risk=round(s_risk, 4),
-        top_reasons=json.dumps(reasons),
-    )
-    db.add(assessment)
     db.commit()
     db.refresh(user)
 
@@ -584,16 +567,18 @@ def create_employee(req: CreateEmployeeRequest, db: Session = Depends(get_db)):
         employee_id=emp_id,
         name=user.full_name,
         username=user.username,
-        avg_daily_hours=assessment.avg_daily_hours,
-        overtime_hours_week=assessment.overtime_hours_week,
-        absence_days_month=assessment.absence_days_month,
-        late_arrivals_month=assessment.late_arrivals_month,
-        tasks_assigned=assessment.tasks_assigned,
-        vacation_days_last_year=assessment.vacation_days_last_year,
-        feedback=assessment.feedback,
-        risk_score=assessment.risk_score,
-        level=assessment.level,
-        last_assessed=assessment.created_at.strftime("%Y-%m-%d %H:%M"),
+        gender=user.gender,
+        age=user.age,
+        avg_daily_hours=None,
+        overtime_hours_week=None,
+        absence_days_month=None,
+        late_arrivals_month=None,
+        tasks_assigned=None,
+        vacation_days_last_year=None,
+        feedback="",
+        risk_score=None,
+        level="Unassessed",
+        last_assessed="لم يتم التقييم بعد (Pending)"
     )
 
 
@@ -612,86 +597,100 @@ def update_employee(user_id: int, req: UpdateEmployeeRequest, db: Session = Depe
     if req.full_name is not None and req.full_name.strip():
         user.full_name = req.full_name.strip()
 
+    if req.gender is not None:
+        user.gender = req.gender.strip() or None
+
+    if req.age is not None:
+        user.age = req.age
+
     if req.password is not None and req.password.strip():
         user.hashed_password = hash_password(req.password.strip())
 
     latest = user.assessments[0] if user.assessments else None
 
-    avg_daily_hours = req.avg_daily_hours if req.avg_daily_hours is not None else (latest.avg_daily_hours if latest else 8.0)
-    overtime_hours_week = req.overtime_hours_week if req.overtime_hours_week is not None else (latest.overtime_hours_week if latest else 0.0)
-    absence_days_month = req.absence_days_month if req.absence_days_month is not None else (latest.absence_days_month if latest else 0)
-    late_arrivals_month = req.late_arrivals_month if req.late_arrivals_month is not None else (latest.late_arrivals_month if latest else 0)
-    tasks_assigned = req.tasks_assigned if req.tasks_assigned is not None else (latest.tasks_assigned if latest else 10)
-    vacation_days_last_year = req.vacation_days_last_year if req.vacation_days_last_year is not None else (latest.vacation_days_last_year if latest else 15)
-    feedback = req.feedback if req.feedback is not None else (latest.feedback if latest else "Normal workload")
+    # Check if workload metrics were submitted to update or create an assessment
+    has_workload_update = any(x is not None for x in [
+        req.avg_daily_hours, req.overtime_hours_week, req.absence_days_month,
+        req.late_arrivals_month, req.tasks_assigned, req.vacation_days_last_year, req.feedback
+    ])
 
-    data = {
-        "avg_daily_hours": avg_daily_hours,
-        "overtime_hours_week": overtime_hours_week,
-        "absence_days_month": absence_days_month,
-        "late_arrivals_month": late_arrivals_month,
-        "tasks_assigned": tasks_assigned,
-        "vacation_days_last_year": vacation_days_last_year,
-        "feedback": feedback
-    }
-    w_prob = _get_workload_prob(data)
-    s_risk = _sentiment_risk(feedback)
-    score, level = compute_risk(w_prob, s_risk)
-    reasons = get_top_reasons(workload_model, data, s_risk, top_n=3)
+    if has_workload_update or latest:
+        avg_daily_hours = req.avg_daily_hours if req.avg_daily_hours is not None else (latest.avg_daily_hours if latest else 8.0)
+        overtime_hours_week = req.overtime_hours_week if req.overtime_hours_week is not None else (latest.overtime_hours_week if latest else 0.0)
+        absence_days_month = req.absence_days_month if req.absence_days_month is not None else (latest.absence_days_month if latest else 0)
+        late_arrivals_month = req.late_arrivals_month if req.late_arrivals_month is not None else (latest.late_arrivals_month if latest else 0)
+        tasks_assigned = req.tasks_assigned if req.tasks_assigned is not None else (latest.tasks_assigned if latest else 10)
+        vacation_days_last_year = req.vacation_days_last_year if req.vacation_days_last_year is not None else (latest.vacation_days_last_year if latest else 15)
+        feedback = req.feedback if req.feedback is not None else (latest.feedback if latest else "")
 
-    if latest:
-        latest.avg_daily_hours = avg_daily_hours
-        latest.overtime_hours_week = overtime_hours_week
-        latest.absence_days_month = absence_days_month
-        latest.late_arrivals_month = late_arrivals_month
-        latest.tasks_assigned = tasks_assigned
-        latest.vacation_days_last_year = vacation_days_last_year
-        latest.feedback = feedback
-        latest.risk_score = score
-        latest.level = level
-        latest.workload_probability = round(w_prob, 4)
-        latest.sentiment_risk = round(s_risk, 4)
-        latest.top_reasons = json.dumps(reasons)
-        latest.created_at = datetime.utcnow()
-        active_assessment = latest
-    else:
-        new_assessment = Assessment(
-            user_id=user.id,
-            avg_daily_hours=avg_daily_hours,
-            overtime_hours_week=overtime_hours_week,
-            absence_days_month=absence_days_month,
-            late_arrivals_month=late_arrivals_month,
-            tasks_assigned=tasks_assigned,
-            vacation_days_last_year=vacation_days_last_year,
-            feedback=feedback,
-            risk_score=score,
-            level=level,
-            workload_probability=round(w_prob, 4),
-            sentiment_risk=round(s_risk, 4),
-            top_reasons=json.dumps(reasons),
-        )
-        db.add(new_assessment)
-        active_assessment = new_assessment
+        data = {
+            "avg_daily_hours": avg_daily_hours,
+            "overtime_hours_week": overtime_hours_week,
+            "absence_days_month": absence_days_month,
+            "late_arrivals_month": late_arrivals_month,
+            "tasks_assigned": tasks_assigned,
+            "vacation_days_last_year": vacation_days_last_year,
+            "feedback": feedback
+        }
+        w_prob = _get_workload_prob(data)
+        s_risk = _sentiment_risk(feedback)
+        score, level = compute_risk(w_prob, s_risk)
+        reasons = get_top_reasons(workload_model, data, s_risk, top_n=3)
+
+        if latest:
+            latest.avg_daily_hours = avg_daily_hours
+            latest.overtime_hours_week = overtime_hours_week
+            latest.absence_days_month = absence_days_month
+            latest.late_arrivals_month = late_arrivals_month
+            latest.tasks_assigned = tasks_assigned
+            latest.vacation_days_last_year = vacation_days_last_year
+            latest.feedback = feedback
+            latest.risk_score = score
+            latest.level = level
+            latest.workload_probability = round(w_prob, 4)
+            latest.sentiment_risk = round(s_risk, 4)
+            latest.top_reasons = json.dumps(reasons)
+            latest.created_at = datetime.utcnow()
+        else:
+            new_assessment = Assessment(
+                user_id=user.id,
+                avg_daily_hours=avg_daily_hours,
+                overtime_hours_week=overtime_hours_week,
+                absence_days_month=absence_days_month,
+                late_arrivals_month=late_arrivals_month,
+                tasks_assigned=tasks_assigned,
+                vacation_days_last_year=vacation_days_last_year,
+                feedback=feedback,
+                risk_score=score,
+                level=level,
+                workload_probability=round(w_prob, 4),
+                sentiment_risk=round(s_risk, 4),
+                top_reasons=json.dumps(reasons),
+            )
+            db.add(new_assessment)
 
     db.commit()
     db.refresh(user)
 
+    latest = user.assessments[0] if user.assessments else None
     emp_id = f"EMP{str(user.id).zfill(4)}"
     return EmployeeSummary(
         user_id=user.id,
         employee_id=emp_id,
         name=user.full_name,
         username=user.username,
-        avg_daily_hours=active_assessment.avg_daily_hours,
-        overtime_hours_week=active_assessment.overtime_hours_week,
-        absence_days_month=active_assessment.absence_days_month,
-        late_arrivals_month=active_assessment.late_arrivals_month,
-        tasks_assigned=active_assessment.tasks_assigned,
-        vacation_days_last_year=active_assessment.vacation_days_last_year,
-        feedback=active_assessment.feedback,
-        risk_score=active_assessment.risk_score,
-        level=active_assessment.level,
-        last_assessed=active_assessment.created_at.strftime("%Y-%m-%d %H:%M"),
+        gender=user.gender,
+        age=user.age,
+        avg_daily_hours=latest.avg_daily_hours if latest else None,
+        overtime_hours_week=latest.overtime_hours_week if latest else None,
+        absence_days_month=latest.absence_days_month if latest else None,
+        late_arrivals_month=latest.late_arrivals_month if latest else None,
+        tasks_assigned=latest.tasks_assigned if latest else None,
+        vacation_days_last_year=latest.vacation_days_last_year if latest else None,
+        feedback=latest.feedback if latest else "",
+        risk_score=latest.risk_score if latest else None,
+        level=latest.level if latest else "Unassessed",
+        last_assessed=latest.created_at.strftime("%Y-%m-%d %H:%M") if latest else "لم يقيّم بعد / Unassessed",
     )
 
 
@@ -796,4 +795,4 @@ def get_stats(db: Session = Depends(get_db)):
 
 @app.get("/health", tags=["System"])
 def health_check():
-    return {"status": "ok", "system": "WorkPulse Enterprise", "db": "Connected"}
+    return {"status": "ok", "system": "Tawazon Enterprise", "db": "Connected"}

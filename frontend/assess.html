@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WorkPulse — New Assessment</title>
+  <title>Tawazon — New Assessment</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
@@ -12,7 +12,7 @@
 
 <nav>
   <div class="nav-start">
-    <a href="index.html" class="nav-brand">⚡ Work<span>Pulse</span></a>
+    <a href="index.html" class="nav-brand">⚡ Tawa<span>zon</span></a>
     <a href="index.html"           data-i18n="nav_dashboard">Dashboard</a>
     <a href="employees.html"       data-i18n="nav_employees">Employees</a>
     <a href="assess.html"          data-i18n="nav_assessment" class="active">New Assessment</a>
@@ -71,11 +71,21 @@
           <label for="feedback" data-i18n="assess_fb_label">Employee Feedback *</label>
           <textarea id="feedback" rows="4"
             data-i18n-ph="assess_fb_placeholder"
-            placeholder="How does the employee feel about their workload? (English only)"
+            placeholder="How does the employee feel about their workload? (Arabic or English)"
             required></textarea>
-          <span class="hint" style="color:var(--yellow);" data-i18n="assess_fb_hint">
-            Write in English — the AI sentiment model supports English only.
+          <span class="hint" style="color:var(--muted);" data-i18n="assess_fb_hint">
+            Write in Arabic or English — the AI analyzes both languages.
           </span>
+        <div class="form-group full-width" style="display:flex;align-items:center;gap:.75rem;background:#f8fafc;padding:.85rem 1rem;border-radius:8px;border:1px solid #e2e8f0;margin-top:.5rem;">
+          <input type="checkbox" id="anonymousMode" style="width:1.2rem;height:1.2rem;cursor:pointer;" />
+          <div>
+            <label for="anonymousMode" style="margin:0;cursor:pointer;font-weight:700;font-size:.9rem;color:var(--text);" data-i18n="assess_anonymous_label">
+              🔒 Confidential & Anonymous Assessment (No identity logging)
+            </label>
+            <div style="font-size:.78rem;color:var(--muted);margin-top:.15rem;" data-i18n="assess_anonymous_hint">
+              Confidential Mode Active: Input data is processed in-memory for diagnostic guidance only and not stored.
+            </div>
+          </div>
         </div>
       </div>
 
@@ -97,6 +107,13 @@
 
     <!-- Result card -->
     <div class="result-card" id="resultCard">
+      <!-- Printable Report Header (only shows when printing/exporting to PDF) -->
+      <div class="print-only-header">
+        <h2 style="font-size:1.5rem;font-weight:800;color:#1e3a8a;" data-i18n="print_report_title">Tawazon AI — Burnout Risk Diagnostic Report</h2>
+        <p style="color:#64748b;font-size:.9rem;margin-top:.2rem;" data-i18n="print_report_sub">Official AI Workplace Health & Risk Analysis</p>
+        <p style="font-size:.8rem;color:#94a3b8;margin-top:.4rem;" id="printDate"></p>
+      </div>
+
       <div class="result-header">
         <div class="result-score-big" id="resultScore">—</div>
         <div class="result-meta">
@@ -121,6 +138,17 @@
             data-i18n="assess_reasons_title">Top Contributing Factors</h4>
         <ul class="reasons-list" id="resultReasons"></ul>
       </div>
+
+      <!-- Export to PDF Button -->
+      <button type="button" class="btn-export-pdf" onclick="triggerPrintReport()">
+        📄 <span data-i18n="btn_export_pdf">Export / Print PDF Report</span>
+      </button>
+    </div>
+
+    <!-- Wellness Tips Card -->
+    <div id="wellnessCard" style="display:none; margin-top:1.5rem; background:var(--surface); border-radius:1rem; padding:1.5rem; border:1px solid var(--border);">
+      <h4 id="wellnessTitle" style="font-size:1rem; font-weight:700; margin-bottom:1rem; color:var(--text);"></h4>
+      <ul id="wellnessList" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.65rem;"></ul>
     </div>
 
   </div>
@@ -196,7 +224,26 @@
     document.getElementById("resultSentiment").textContent = `${(data.sentiment_risk*100).toFixed(1)}%`;
 
     document.getElementById("resultReasons").innerHTML =
-      data.top_reasons.map(r => `<li>${r}</li>`).join("");
+      data.top_reasons.map(r => `<li>${i18n.translateReason(r)}</li>`).join("");
+
+    // ── Personalized Wellness Tips (Dynamic based on Level & SHAP Root Causes) ──
+    const tips = getPersonalizedWellnessTips(data);
+    const wellnessCard = document.getElementById("wellnessCard");
+    document.getElementById("wellnessTitle").textContent = i18n.t("wellness_title");
+
+    const tipColors = { high: "#ef4444", medium: "#f59e0b", low: "#10b981" };
+    const borderColor = tipColors[lvl] || "#3b82f6";
+    wellnessCard.style.borderLeft = `4px solid ${borderColor}`;
+
+    if (Array.isArray(tips) && tips.length > 0) {
+      document.getElementById("wellnessList").innerHTML = tips.map(tip =>
+        `<li style="display:flex;align-items:flex-start;gap:.5rem;font-size:.9rem;color:var(--text);line-height:1.5;">
+           <span style="flex-shrink:0;">${tip.split(" ")[0]}</span>
+           <span>${tip.split(" ").slice(1).join(" ")}</span>
+         </li>`
+      ).join("");
+      wellnessCard.style.display = "block";
+    }
 
     card.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -240,7 +287,9 @@
         }
         throw new Error(message);
       }
-      showResult(await res.json());
+      const resultData = await res.json();
+      _lastResultData = resultData;
+      showResult(resultData);
     } catch (err) {
       const el = document.getElementById("formError");
       el.textContent = `Error: ${err.message}. ${i18n.t("assess_api_err")}`;
@@ -250,10 +299,38 @@
     }
   });
 
-  // Update button text on language change
+  function triggerPrintReport() {
+    const d = new Date();
+    document.getElementById("printDate").textContent = `Generated: ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+    window.print();
+  }
+
+  // Update button text on language change + re-render wellness if visible
+  let _lastResultData = null;
   document.addEventListener("langchange", () => {
     if (!document.getElementById("submitBtn").disabled) {
       document.getElementById("btnText").textContent = i18n.t("assess_btn");
+    }
+    // Re-render result texts & wellness tips in new language if result is already shown
+    if (_lastResultData && document.getElementById("resultCard").classList.contains("show")) {
+      const lvl = _lastResultData.level.toLowerCase();
+      const icon = lvl === "high" ? "🔴" : lvl === "medium" ? "🟡" : "🟢";
+      const levelKey = lvl === "high" ? "assess_level_high" : lvl === "medium" ? "assess_level_med" : "assess_level_low";
+      document.getElementById("resultLevelText").textContent = `${icon} ${i18n.t(levelKey)}`;
+
+      document.getElementById("resultReasons").innerHTML =
+        _lastResultData.top_reasons.map(r => `<li>${i18n.translateReason(r)}</li>`).join("");
+
+      const tips = getPersonalizedWellnessTips(_lastResultData);
+      document.getElementById("wellnessTitle").textContent = i18n.t("wellness_title");
+      if (Array.isArray(tips) && tips.length > 0) {
+        document.getElementById("wellnessList").innerHTML = tips.map(tip =>
+          `<li style="display:flex;align-items:flex-start;gap:.5rem;font-size:.9rem;color:var(--text);line-height:1.5;">
+             <span style="flex-shrink:0;">${tip.split(" ")[0]}</span>
+             <span>${tip.split(" ").slice(1).join(" ")}</span>
+           </li>`
+        ).join("");
+      }
     }
   });
 </script>

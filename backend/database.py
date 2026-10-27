@@ -54,6 +54,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
     full_name = Column(String(100), nullable=False)
+    gender = Column(String(20), nullable=True)  # "ذكر" / "أنثى" or "Male" / "Female"
+    age = Column(Integer, nullable=True)
     role = Column(String(20), default="employee")  # "admin" or "employee"
     hashed_password = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -88,6 +90,27 @@ class Assessment(Base):
 # ── DB Initialization & Seed ──────────────────────────────────────────────────
 def init_db():
     Base.metadata.create_all(bind=engine)
+
+    # Lightweight migration for new columns: gender & age
+    from sqlalchemy import inspect, text
+    with engine.connect() as conn:
+        inspector = inspect(engine)
+        columns = [c["name"] for c in inspector.get_columns("users")]
+        if "gender" not in columns:
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN gender VARCHAR(20)"))
+                conn.commit()
+                print("[DB] Added 'gender' column to users table.")
+            except Exception as e:
+                print(f"[DB] Migration note (gender): {e}")
+        if "age" not in columns:
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN age INTEGER"))
+                conn.commit()
+                print("[DB] Added 'age' column to users table.")
+            except Exception as e:
+                print(f"[DB] Migration note (age): {e}")
+
     db = SessionLocal()
     try:
         # Create Default Admin if not exists
@@ -98,6 +121,8 @@ def init_db():
                 username="admin",
                 full_name="HR Administrator",
                 role="admin",
+                gender="Male",
+                age=32,
                 hashed_password=hash_password(admin_pwd)
             )
             db.add(admin_user)

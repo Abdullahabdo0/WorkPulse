@@ -1,5 +1,5 @@
 /* ============================================================
-   WorkPulse — Global Styles
+   Tawazon — Global Styles
    ============================================================ */
 
 /* ── Reset & Base ─────────────────────────────────────────── */
@@ -115,7 +115,7 @@ nav {
   align-items: center;
   gap: .35rem;
   white-space: nowrap;
-  direction: ltr; /* Keeps English brand name in LTR order: ⚡ WorkPulse */
+  direction: ltr; /* Keeps English brand name in LTR order: ⚡ Tawazon */
 }
 
 .nav-brand span { color: var(--blue); }
@@ -897,4 +897,67 @@ body[dir="rtl"] .toast.error   { border-left: none; border-right: 4px solid var(
   align-items: center;
   gap: .5rem;
 }
+
+/* ── Export / Print PDF Button ─────────────────────────────── */
+.btn-export-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+.btn-export-pdf:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* ── Print Header & Media Rules for Clean PDF Export ─────── */
+.print-only-header {
+  display: none;
+}
+
+@media print {
+  nav, .lang-btn, .btn-nav-logout, form, .form-group, #submitBtn,
+  .btn-export-pdf, .btn-logout, .quick-fill, .user-badge-header button,
+  #formError, .page-btn, #employeeAssessForm, #btnSaveAssess {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 12pt;
+  }
+
+  main {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .result-card, #wellnessCard, .history-card {
+    display: block !important;
+    border: 1px solid #94a3b8 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .print-only-header {
+    display: block !important;
+    text-align: center;
+    border-bottom: 2px solid #2563eb;
+    padding-bottom: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
 

@@ -517,8 +517,8 @@ if __name__ == "__main__":
     docs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs")
     os.makedirs(docs_dir, exist_ok=True)
     
-    deck1 = os.path.join(docs_dir, "WorkPulse_Team_Study_Guide_Arabic_Clear.pptx")
-    deck2 = os.path.join(docs_dir, "WorkPulse_Doctor_Defense_Arabic_Clear.pptx")
+    deck1 = os.path.join(docs_dir, "Tawazon_Team_Study_Guide.pptx")
+    deck2 = os.path.join(docs_dir, "Tawazon_Doctor_Defense.pptx")
     
     create_team_study_guide(deck1)
     create_doctor_defense(deck2)

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WorkPulse — Executive Dashboard</title>
+  <title>Tawazon — Executive Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
@@ -14,7 +14,7 @@
 <!-- ── Navigation ─────────────────────────────────────────── -->
 <nav>
   <div class="nav-start">
-    <a href="index.html" class="nav-brand">⚡ Work<span>Pulse</span> (Admin)</a>
+    <a href="index.html" class="nav-brand">⚡ Tawa<span>zon</span> (Admin)</a>
     <a href="index.html"        data-i18n="nav_dashboard" class="active">Dashboard</a>
     <a href="employees.html"    data-i18n="nav_employees">Employees</a>
   </div>
@@ -30,7 +30,7 @@
   <div class="exec-header-banner">
     <div>
       <div style="display:inline-block; background:rgba(59,130,246,0.2); border:1px solid rgba(59,130,246,0.4); color:#60a5fa; font-size:.78rem; font-weight:800; padding:.2rem .75rem; border-radius:999px; margin-bottom:.5rem;">
-        ⚡ WorkPulse AI Intelligence Core
+        ⚡ Tawazon AI Intelligence Core
       </div>
       <h1 data-i18n="dash_title">Executive Analytics Dashboard</h1>
       <p data-i18n="dash_subtitle">Live enterprise workload intelligence & predictive burnout monitoring</p>
@@ -39,11 +39,32 @@
       <div style="font-size:.85rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:.5rem 1rem; border-radius:8px; border:1px solid rgba(255,255,255,0.1);" id="liveDateBadge">
         📅 Live
       </div>
+      <button class="btn-export-pdf" style="margin-top:0; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:#fff;" onclick="window.print()">
+        📄 <span data-i18n="btn_export_pdf">Export / Print PDF</span>
+      </button>
       <a href="employees.html" class="btn-primary" style="box-shadow:none;">
         <span>👥</span>
         <span data-i18n="nav_employees">Manage Workforce</span>
       </a>
     </div>
+  </div>
+
+  <!-- Urgent Critical Alert Banner -->
+  <div id="urgentAlertBanner" style="display:none; margin-bottom:1.5rem; background:#fef2f2; border:1px solid #f87171; border-left:6px solid #ef4444; border-radius:10px; padding:1rem 1.25rem; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+    <div style="display:flex; align-items:center; gap:0.75rem;">
+      <span style="font-size:1.6rem;">🚨</span>
+      <div>
+        <h4 style="font-size:0.95rem; font-weight:800; color:#991b1b; margin:0;" id="urgentAlertTitle">
+          Critical Workforce Alert: High Burnout Risk Detected
+        </h4>
+        <p style="font-size:0.83rem; color:#b91c1c; margin:0.2rem 0 0;" id="urgentAlertSub">
+          Immediate workload rebalancing and overtime reduction required.
+        </p>
+      </div>
+    </div>
+    <a href="#watchlistSection" style="background:#ef4444; color:#fff; padding:0.45rem 1rem; border-radius:6px; font-size:0.82rem; font-weight:700; text-decoration:none;">
+      Inspect Watchlist &darr;
+    </a>
   </div>
 
   <!-- Primary Risk Level KPIs -->
@@ -120,7 +141,7 @@
   </div>
 
   <!-- Immediate Critical Attention Watchlist -->
-  <div class="watchlist-card">
+  <div class="watchlist-card" id="watchlistSection">
     <div class="watchlist-header">
       <div>
         <h3 data-i18n="dash_watchlist_title">🚨 Critical Attention Watchlist</h3>
@@ -189,6 +210,21 @@
       document.getElementById("statAvgOt").innerHTML    = `${data.avg_overtime_hours}<span style="font-size:1.1rem; color:var(--muted); font-weight:600;">h</span>`;
       document.getElementById("statAvgTasks").textContent = data.avg_tasks;
       document.getElementById("statAvgScore").innerHTML = `${data.avg_risk_score}<span style="font-size:1.1rem; color:var(--muted); font-weight:600;">/100</span>`;
+
+      // Urgent Alert Banner Toggle
+      const alertBanner = document.getElementById("urgentAlertBanner");
+      if (data.high > 0) {
+        alertBanner.style.display = "flex";
+        const isAr = i18n.lang() === "ar";
+        document.getElementById("urgentAlertTitle").textContent = isAr
+          ? `🚨 تنبيه حرج: تم رصد ${data.high} موظف (${data.high_pct}%) في منطقة خطر الاحتراق المرتفع!`
+          : `🚨 Critical Alert: ${data.high} employee(s) (${data.high_pct}%) detected at high burnout risk!`;
+        document.getElementById("urgentAlertSub").textContent = isAr
+          ? `المتوسط الحالي للأوفرتايم ${data.avg_overtime_hours} ساعة/أسبوع. يُرجى فحص قائمة المتابعة والتدخل فوراً.`
+          : `Current overtime average is ${data.avg_overtime_hours}h/wk. Review the priority watchlist below immediately.`;
+      } else {
+        alertBanner.style.display = "none";
+      }
 
       // Render Charts & Watchlist
       buildCharts(data);
@@ -364,6 +400,15 @@
       buildCharts(cachedStats);
       renderWatchlist(cachedStats.high_risk_list || []);
       renderInsights(cachedStats);
+      if (cachedStats.high > 0) {
+        const isAr = i18n.lang() === "ar";
+        document.getElementById("urgentAlertTitle").textContent = isAr
+          ? `🚨 تنبيه حرج: تم رصد ${cachedStats.high} موظف (${cachedStats.high_pct}%) في منطقة خطر الاحتراق المرتفع!`
+          : `🚨 Critical Alert: ${cachedStats.high} employee(s) (${cachedStats.high_pct}%) detected at high burnout risk!`;
+        document.getElementById("urgentAlertSub").textContent = isAr
+          ? `المتوسط الحالي للأوفرتايم ${cachedStats.avg_overtime_hours} ساعة/أسبوع. يُرجى فحص قائمة المتابعة والتدخل فوراً.`
+          : `Current overtime average is ${cachedStats.avg_overtime_hours}h/wk. Review the priority watchlist below immediately.`;
+      }
     }
   });
 

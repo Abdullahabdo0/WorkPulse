@@ -473,9 +473,10 @@ def create_deck():
     add_box(s12, "🏆 عند الإجابة بهذه المصطلحات الهندسية الدقيقة، تضمنون الحصول على أعلى تقدير (امتياز) بإذن الله!", 0.8, 6.6, 11.7, 0.4, font_size=12, bold=True, color=GREEN)
 
     # Save presentation
-    out_dir = r"C:\Users\abduu\Desktop\WorkPulse\docs"
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    out_dir = os.path.join(root_dir, "docs")
     os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, "WorkPulse_Team_Workflow_and_Handover.pptx")
+    out_path = os.path.join(out_dir, "Tawazon_Team_Workflow_and_Handover.pptx")
     prs.save(out_path)
     print(f"Presentation successfully created at: {out_path}")
 

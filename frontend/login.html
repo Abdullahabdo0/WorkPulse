@@ -3,100 +3,199 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WorkPulse — Login</title>
+  <title>Tawazon — Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    .auth-container {
-      max-width: 440px;
-      margin: 4rem auto;
-      padding: 2rem;
-      background: #ffffff;
-      border-radius: var(--radius);
-      box-shadow: 0 4px 20px rgba(0,0,0,.08);
-      border: 1px solid var(--border);
+    body {
+      background: radial-gradient(circle at 50% -10%, #eff6ff 0%, #f8fafc 60%, #f1f5f9 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
+
+    .auth-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.25rem;
+    }
+
+    .auth-card {
+      max-width: 420px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 2.75rem 2.25rem;
+      box-shadow: 0 12px 35px -8px rgba(15, 23, 42, 0.08), 0 0 1px 1px rgba(15, 23, 42, 0.04);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .auth-card:hover {
+      box-shadow: 0 16px 42px -10px rgba(15, 23, 42, 0.11), 0 0 1px 1px rgba(15, 23, 42, 0.04);
+    }
+
     .auth-header {
       text-align: center;
       margin-bottom: 2rem;
     }
-    .auth-header h1 {
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: var(--text);
-    }
-    .auth-header p {
-      color: var(--muted);
-      font-size: .9rem;
-      margin-top: .4rem;
-    }
-    .auth-tabs {
+
+    .auth-brand-badge {
+      width: 62px;
+      height: 62px;
+      margin: 0 auto 1.25rem;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #0ea5e9 0%, #2563eb 50%, #7c3aed 100%);
+      color: #ffffff;
       display: flex;
-      border-bottom: 2px solid var(--border);
-      margin-bottom: 1.5rem;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.35), 0 4px 10px -3px rgba(124, 58, 237, 0.2);
+      position: relative;
+      overflow: hidden;
     }
-    .auth-tab {
-      flex: 1;
-      text-align: center;
-      padding: .75rem;
-      font-weight: 700;
-      color: var(--muted);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
-      transition: all .2s;
+
+    .auth-brand-badge::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%);
+      pointer-events: none;
     }
-    .auth-tab.active {
-      color: var(--blue);
-      border-color: var(--blue);
+
+    .auth-brand-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
+    .auth-brand-icon svg {
+      width: 30px;
+      height: 30px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+    }
+
+    .auth-brand-title {
+      font-size: 2.15rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.25rem;
+      display: inline-block;
+    }
+
+    .auth-brand-title span {
+      color: #2563eb;
+    }
+
+    .auth-brand-sub {
+      color: #64748b;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
     .auth-group {
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.35rem;
     }
+
     .auth-group label {
       display: block;
-      font-size: .85rem;
+      font-size: 0.85rem;
       font-weight: 700;
-      margin-bottom: .4rem;
+      color: #334155;
+      margin-bottom: 0.45rem;
     }
+
+    .auth-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
     .auth-group input {
       width: 100%;
-      padding: .75rem 1rem;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-size: .95rem;
+      padding: 0.82rem 1.05rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 11px;
+      font-size: 0.95rem;
       outline: none;
       font-family: inherit;
-      transition: border-color .2s;
+      background: #f8fafc;
+      color: #0f172a;
+      transition: all 0.2s ease;
     }
+
     .auth-group input:focus {
-      border-color: var(--blue);
+      background: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
+
+    .auth-group input::placeholder {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
     .btn-auth {
       width: 100%;
-      padding: .85rem;
-      background: var(--blue);
-      color: #fff;
+      padding: 0.85rem 1rem;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff;
       border: none;
-      border-radius: 8px;
+      border-radius: 11px;
       font-size: 1rem;
       font-weight: 700;
       cursor: pointer;
-      transition: background .2s;
+      font-family: inherit;
+      box-shadow: 0 6px 18px -4px rgba(37, 99, 235, 0.35);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
     }
+
     .btn-auth:hover {
-      background: #2563eb;
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px -4px rgba(37, 99, 235, 0.45);
     }
-    .quick-creds {
-      margin-top: 1.5rem;
-      padding: .9rem;
-      background: #f8fafc;
-      border-radius: 8px;
-      font-size: .8rem;
-      color: var(--muted);
-      line-height: 1.5;
-      border: 1px dashed var(--border);
+
+    .btn-auth:active {
+      transform: translateY(0);
+    }
+
+    .btn-auth:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .spinner-auth {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -104,39 +203,52 @@
 
 <nav>
   <div class="nav-start">
-    <a href="login.html" class="nav-brand">⚡ Work<span>Pulse</span></a>
+    <a href="login.html" class="nav-brand">⚡ Tawa<span>zon</span></a>
   </div>
   <div class="nav-end">
     <button class="lang-btn" onclick="i18n.toggle()">العربية</button>
   </div>
 </nav>
 
-<div class="auth-container">
-  <div class="auth-header">
-    <div style="font-size: 2.2rem; margin-bottom:.4rem;">🔐</div>
-    <h1 data-i18n="auth_portal_title">WorkPulse Access</h1>
-    <p data-i18n="auth_portal_subtitle">AI Workplace Burnout Management System</p>
-  </div>
-
-  <div class="auth-notice" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: .75rem; margin-bottom: 1.5rem; font-size: .85rem; color: #64748b; text-align: center; line-height: 1.5;">
-    🔒 <span data-i18n="auth_notice">تسجيل الدخول متاح للموظفين والإدارة. حسابات الموظفين يتم إنشاؤها عبر مسؤول النظام (HR Admin) فقط.</span>
-  </div>
-
-  <!-- Login Form -->
-  <form id="loginForm">
-    <div class="auth-group">
-      <label data-i18n="auth_username">اسم المستخدم</label>
-      <input type="text" id="loginUsername" placeholder="اسم المستخدم / Username" required />
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-brand-badge">
+        <div class="auth-brand-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9z" stroke-width="1.8" fill="none"/>
+            <path d="M12 8v4l2.5 2.5" stroke-width="2.2"/>
+            <path d="M8.5 12a3.5 3.5 0 1 0 7 0" stroke-width="1.8" fill="none"/>
+            <circle cx="12" cy="12" r="1.2" fill="#ffffff" stroke="none"/>
+          </svg>
+        </div>
+      </div>
+      <h1 class="auth-brand-title">Tawa<span>zon</span></h1>
+      <p class="auth-brand-sub" data-i18n="auth_portal_title">تسجيل الدخول</p>
     </div>
-    <div class="auth-group">
-      <label data-i18n="auth_password">كلمة المرور</label>
-      <input type="password" id="loginPassword" placeholder="••••••••" required />
-    </div>
-    <button type="submit" class="btn-auth" id="btnLogin" data-i18n="auth_btn_login">دخول</button>
-  </form>
 
-  <div class="alert alert-error" id="authError" style="margin-top:1rem;"></div>
+    <!-- Login Form -->
+    <form id="loginForm">
+      <div class="auth-group">
+        <label for="loginUsername" data-i18n="auth_username">اسم المستخدم</label>
+        <div class="auth-input-wrap">
+          <input type="text" id="loginUsername" placeholder="Username" autocomplete="username" required />
+        </div>
+      </div>
+      <div class="auth-group">
+        <label for="loginPassword" data-i18n="auth_password">كلمة المرور</label>
+        <div class="auth-input-wrap">
+          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+      </div>
+      <button type="submit" class="btn-auth" id="btnLogin">
+        <span id="btnLoginText" data-i18n="auth_btn_login">تسجيل الدخول</span>
+        <div class="spinner-auth" id="loginSpinner"></div>
+      </button>
+    </form>
 
+    <div class="alert alert-error" id="authError" style="margin-top:1.25rem;"></div>
+  </div>
 </div>
 
 <script src="js/config.js"></script>
@@ -158,6 +270,13 @@
     const username = document.getElementById("loginUsername").value.trim();
     const password = document.getElementById("loginPassword").value;
 
+    const btn = document.getElementById("btnLogin");
+    const spn = document.getElementById("loginSpinner");
+    const btnText = document.getElementById("btnLoginText");
+
+    btn.disabled = true;
+    spn.style.display = "block";
+
     try {
       const res = await fetch(`${API}/auth/login`, {
         method: "POST",
@@ -167,7 +286,7 @@
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "فشل تسجيل الدخول");
+        throw new Error(err.detail || (i18n.lang() === "ar" ? "فشل تسجيل الدخول" : "Login failed"));
       }
 
       const user = await res.json();
@@ -181,6 +300,9 @@
       }
     } catch (err) {
       showError(err.message);
+    } finally {
+      btn.disabled = false;
+      spn.style.display = "none";
     }
   });
 </script>

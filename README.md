@@ -1,4 +1,4 @@
-# 🌟 WorkPulse — AI Workplace Burnout Risk Prediction Platform
+# 🌟 Tawazon — AI Workplace Burnout Risk Prediction Platform
 > **منصة ذكية مدعومة بالذكاء الاصطناعي للتنبؤ بمخاطر الاحتراق الوظيفي وحماية صحة الموظفين**  
 > *مشروع تخرج وتطبيق عملي متكامل مطور بواسطة فريق عمل من 5 مهندسين.*
 
@@ -51,7 +51,7 @@
 ---
 
 ## 2. نظرة عامة على النظام
-يقدم **WorkPulse** حلاً متكاملاً ليس فقط لمدراء الموارد البشرية بل وللموظفين أنفسهم، حيث يعتمد على **محرك هجين فريد (Hybrid Risk Engine)** يجمع بين:
+يقدم **Tawazon** حلاً متكاملاً ليس فقط لمدراء الموارد البشرية بل وللموظفين أنفسهم، حيث يعتمد على **محرك هجين فريد (Hybrid Risk Engine)** يجمع بين:
 $$\text{Burnout Risk} = (0.60 \times \text{Workload Model}) + (0.40 \times \text{Sentiment Model})$$
 * **60% للبيانات الرقمية:** ساعات العمل الفعلية والإرهاق الجسدي.
 * **40% لنصوص المشاعر:** الحالة النفسية، مشاعر الإحباط، أو الرضا الوظيفي.
@@ -165,7 +165,7 @@ $$\text{Burnout Risk} = (0.60 \times \text{Workload Model}) + (0.40 \times \text
 
 ## 7. هيكل المشروع (Project Structure)
 ```
-WorkPulse/
+Tawazon/
 ├── backend/
 │   ├── main.py              # خادم FastAPI وتوزيع الـ APIs
 │   ├── database.py          # نماذج SQLAlchemy والاتصال بقاعدة البيانات
@@ -191,9 +191,9 @@ WorkPulse/
 │   ├── workload_model.pkl   # نموذج Random Forest المدرب
 │   └── scaler.pkl           # مقياس المعايرة الرقمي
 ├── docs/                    # مجلد التوثيق والعروض التقديمية
-│   ├── WorkPulse_Team_Workflow_and_Handover.pptx # عرض تسلسل العمل وتسليم المهام
-│   ├── WorkPulse_Doctor_Defense.pptx             # عرض المناقشة الرسمي للدكتور
-│   └── WorkPulse_Team_Study_Guide.pptx           # دليل المذاكرة والشرح المفصل
+│   ├── Tawazon_Team_Workflow_and_Handover.pptx # عرض تسلسل العمل وتسليم المهام
+│   ├── Tawazon_Doctor_Defense.pptx             # عرض المناقشة الرسمي للدكتور
+│   └── Tawazon_Team_Study_Guide.pptx           # دليل المذاكرة والشرح المفصل
 ├── train_model.py           # كود تدريب ومقارنة نماذج الـ Machine Learning
 ├── eda.py                   # كود توليد رسومات التحليل الاستكشافي
 ├── requirements.txt         # قائمة المكتبات والتبعيات
@@ -253,16 +253,16 @@ python -m uvicorn backend.main:app --reload
 ## 11. ملفات العروض التقديمية والتوثيق (Presentations & Docs)
 يحتوي مجلد `docs/` على ثلاثة ملفات باوربوينت مصممة باحترافية عالية بالخط العربي الواضح والثيم الليلي الأنيق:
 
-1. 📊 **[`WorkPulse_Team_Workflow_and_Handover.pptx`](docs/WorkPulse_Team_Workflow_and_Handover.pptx):**
+1. 📊 **[`Tawazon_Team_Workflow_and_Handover.pptx`](docs/Tawazon_Team_Workflow_and_Handover.pptx):**
    * يشرح تسلسل العمل بين الفريق: من بدأ أولاً، وماذا سلم لمن، وكيف تجمعت القطع الخمسة معاً، مع روشتة الإجابة على الدكتور ومصفوفة التسليمات ودليل الديمو الحي.
-2. 🎓 **[`WorkPulse_Doctor_Defense.pptx`](docs/WorkPulse_Doctor_Defense.pptx):**
+2. 🎓 **[`Tawazon_Doctor_Defense.pptx`](docs/Tawazon_Doctor_Defense.pptx):**
    * مخصص للعرض والمناقشة الرسمية أمام الدكتور ولجنة التحكيم (مدعم بلمسات ذكية واحترافية ومخططات معمارية للأنظمة المؤسسية).
-3. 📖 **[`WorkPulse_Team_Study_Guide.pptx`](docs/WorkPulse_Team_Study_Guide.pptx):**
+3. 📖 **[`Tawazon_Team_Study_Guide.pptx`](docs/Tawazon_Team_Study_Guide.pptx):**
    * دليل دراسي عميق لكل مهندس من أعضاء الفريق لمذاكرة كوده ومعادلاته بالتفصيل والإجابة على أي سؤال تقني دقيق.
 
 ---
 
 <div align="center">
   <b>تم تطوير هذا المشروع كنموذج عملي متكامل للهندسة البرمجية والذكاء الاصطناعي 🚀</b><br>
-  <i>WorkPulse Team: Eng. Assma • Eng. Abdullah • Eng. Shimaa • Eng. Ahmed • Eng. Noury</i>
+  <i>Tawazon Team: Eng. Assma • Eng. Abdullah • Eng. Shimaa • Eng. Ahmed • Eng. Noury</i>
 </div>
